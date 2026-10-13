@@ -1,132 +1,122 @@
-# SIDAC — détection automatique d'anomalies comptables
+# SIDAC, détection automatique d'anomalies comptables
 
-> Pendant trois mois, j'ai regardé une comptable pointer à la main un relevé de
-> plus de 14 000 lignes. Une journée entière de travail, pour retrouver quelques
-> écritures qui ne tombaient pas juste. SIDAC est né de là.
+Pendant mon stage, j'ai vu une comptable pointer à la main un relevé de plus de
+14 000 lignes. Elle cherchait les écritures qui ne tombaient pas juste. Ça lui
+prenait plus d'une journée. J'ai passé mon stage à essayer de lui faire gagner
+cette journée.
 
-**SIDAC** (Système Intelligent de Détection d'Anomalies Comptables) est une
-application web qui apure un relevé de compte, repère les écritures sans
-contrepartie et signale les montants atypiques — puis les soumet au jugement
-d'un comptable, qui garde le dernier mot.
+SIDAC veut dire Système Intelligent de Détection d'Anomalies Comptables. C'est
+une application web qui lit un relevé de compte, retrouve les écritures qui
+n'ont pas de contrepartie, signale les montants inhabituels, et soumet tout ça
+au comptable, qui garde le dernier mot.
 
-Projet de fin d'études (Bachelor Intelligence Artificielle & Big Data, KEYCE
-Douala), réalisé au cours d'un stage à l'agence de Douala de la Banque des États
-de l'Afrique Centrale.
+C'est mon projet de fin d'études (Bachelor Intelligence Artificielle et Big
+Data, KEYCE Douala). Je l'ai réalisé pendant un stage à l'agence de Douala de la
+Banque des États de l'Afrique Centrale.
 
----
+## Important : aucune donnée réelle dans ce dépôt
 
-> ### ⚠️ Aucune donnée de la Banque ne figure dans ce dépôt
->
-> Les écritures de la Banque sont couvertes par le secret professionnel. Elles
-> ne sont donc **ni dans le code, ni dans le jeu d'essai, ni sur les captures
-> d'écran** de ce dépôt.
->
-> Tout ce que l'on voit ici a été **fabriqué de toutes pièces** : montants tirés
-> au sort, tiers inventés (« ETS DELTA », « GARAGE ZETA »…), dates aléatoires.
-> Seule la **structure** du fichier est fidèle à celle d'un export comptable —
-> c'est elle qui permet à l'application de fonctionner, et elle seule.
->
-> Deux séries de chiffres apparaissent plus bas, et il ne faut pas les
-> confondre :
->
-> | | Origine | Où |
-> |---|---|---|
-> | **14 324 écritures, 83,9 %** | mesures réelles, faites **dans l'agence**, citées d'après le mémoire soutenu publiquement | section « Résultats mesurés » |
-> | **1 210 écritures, 940 apurées** | **jeu d'essai fictif** livré avec le dépôt | captures d'écran et section « Essayer » |
->
-> Les mesures réelles sont des agrégats : elles ne permettent d'identifier
-> aucune opération, aucun tiers, aucun agent.
+Les écritures d'une banque sont confidentielles. Elles ne sortent pas de
+l'agence, et elles ne sont pas ici.
 
----
+Tout ce que vous voyez dans ce dépôt est inventé. Le fichier d'essai, les
+montants, les noms de sociétés (ETS DELTA, GARAGE ZETA, ATELIER KAPPA), les
+dates : j'ai tout fabriqué moi-même avec un générateur. Les captures d'écran ont
+été prises avec ce fichier inventé, et avec lui seul.
 
-## Le problème
+La seule chose que j'ai gardée du vrai, c'est la forme du fichier d'entrée, pour
+que l'application sache le lire. Une forme de fichier n'est pas une donnée.
 
-Un *suspens* est une écriture qui ne trouve pas sa contrepartie. Pour le
-retrouver, le comptable lit le relevé ligne à ligne et apparie les montants à la
-main. Sur un relevé semestriel de 14 324 écritures, cela représente plus d'une
-journée de travail — et le résultat dépend de la fatigue.
+Attention à ne pas mélanger les deux séries de chiffres qui apparaissent plus
+bas :
 
-Trois causes se mêlent sans qu'on puisse les distinguer à l'œil : des doublons,
-des paiements encore en attente, et des écritures qui ne sont jamais remontées.
-Tant qu'on ne les sépare pas, on ne sait pas quoi corriger.
+* 14 324 écritures et 83,9 % d'accord : ce sont mes vraies mesures, faites dans
+  l'agence. Je les cite d'après mon mémoire, qui a été soutenu en public. Ce
+  sont des totaux, on ne peut remonter à aucune opération ni à personne.
+* 1 210 écritures et 940 apurées : c'est le fichier d'essai inventé, celui qui
+  est livré avec le dépôt et qui sert aux captures.
 
-## Ce que fait SIDAC
+## Le problème que j'ai voulu résoudre
 
-1. **Il lit le relevé** — exports `.xls` et `.xlsx`, deux formats reconnus
-   automatiquement. Si la structure ne correspond à aucun des deux, le fichier
-   est refusé : mieux vaut refuser que d'interpréter de travers.
-2. **Il apparie** les écritures par montant et par libellé, et classe ce qui
-   reste en trois familles selon la cause probable du suspens.
-3. **Il signale les montants atypiques** par apprentissage non supervisé
-   (Isolation Forest), avec un taux de contamination adapté à la taille du
-   journal.
-4. **Il explique chaque signalement** — jamais un score seul. Le comptable lit
-   la raison, puis accepte ou refuse.
-5. **Il fait circuler** le résultat dans la hiérarchie réelle du service :
-   agent → chef de section → chef de service, chaque visa étant horodaté.
-6. **Il produit l'état signé** au format Excel, celui que le service utilise
+Un suspens, c'est une écriture qui ne trouve pas sa contrepartie. Pour la
+retrouver, le comptable lit le relevé ligne par ligne et apparie les montants à
+la main.
+
+Le vrai souci, c'est qu'il y a trois causes différentes derrière un suspens, et
+qu'elles se ressemblent à l'œil : un doublon de saisie, un paiement encore en
+attente, ou une écriture qui n'est jamais remontée. Tant qu'on ne les sépare
+pas, on ne sait pas quoi corriger.
+
+## Ce que fait l'application
+
+1. Elle lit le relevé. Elle accepte deux formats de fichier et les reconnaît
+   toute seule. Si la structure ne correspond à aucun des deux, elle refuse le
+   fichier au lieu de l'interpréter de travers.
+2. Elle apparie les écritures par montant et par libellé, puis elle classe ce
+   qui reste dans les trois causes.
+3. Elle signale les montants inhabituels avec un algorithme d'apprentissage non
+   supervisé (Isolation Forest).
+4. Pour chaque signalement, elle écrit en toutes lettres pourquoi elle le fait.
+   Le comptable lit la raison, puis il accepte ou il refuse.
+5. Elle fait circuler le résultat dans la hiérarchie du service : l'agent
+   renseigne, le chef de section vise, le chef de service valide. Chaque visa
+   est horodaté.
+6. Elle produit l'état final en Excel, dans le format que le service utilisait
    déjà.
 
-![Tableau de bord de SIDAC](captures/tableau_de_bord.png)
+![Tableau de bord](captures/tableau_de_bord.png)
 
-*Le tableau de bord après analyse — **jeu d'essai fictif** : les écritures sans
-contrepartie, réparties selon les trois causes, et les contrôles
-complémentaires.*
+*Le tableau de bord après une analyse. Fichier d'essai inventé.*
 
 ## Chaque signalement s'explique
 
-C'est le cœur du projet. L'application ne renvoie jamais un score seul : pour
-chaque écriture, elle écrit en toutes lettres pourquoi elle la signale, et
-propose une formulation que le comptable reprend, corrige ou refuse.
+C'est pour moi le point le plus important du projet. L'application ne renvoie
+jamais un score tout seul. Pour chaque écriture, elle dit pourquoi elle la
+signale, et elle propose une phrase que le comptable peut reprendre, corriger ou
+refuser.
 
 ![Fiche d'analyse](captures/fiche_analyse.png)
 
-*« Sans contrepartie depuis 185 jours, au-delà du délai habituel du compte
-(9 jours) » — le délai de référence est mesuré sur le relevé lui-même, et non
-fixé à l'avance. Les libellés visibles (ETS Cdt Apurement IMPRIMERIE OMEGA,
-VIREMENT ATELIER KAPPA…) sont **inventés** : ce sont ceux du jeu d'essai.*
+*"Sans contrepartie depuis 185 jours, au-delà du délai habituel du compte
+(9 jours)". Le délai de référence n'est pas fixé à l'avance, il est calculé sur
+le relevé qu'on charge. Les noms de sociétés qu'on voit ici sont inventés.*
 
-## Résultats mesurés
+## Les résultats
 
-Ces chiffres-ci sont les **vrais**. Ils ont été mesurés dans l'agence, sur le
-relevé de janvier à juin 2026 (14 324 écritures), et sont cités d'après le
-mémoire soutenu publiquement. Le relevé lui-même, lui, est resté à la Banque.
+Ces chiffres sont les vrais, mesurés dans l'agence sur le relevé de janvier à
+juin 2026, qui comptait 14 324 écritures.
 
-| Mesure | Valeur |
+| Ce que j'ai mesuré | Résultat |
 |---|---|
-| Durée du traitement complet | **moins d'une minute** (médianes de 37 à 59 s) |
-| Accord avec le comptable, sur le statut d'apurement | **83,9 %** |
-| Accord avec le comptable, sur la contrepartie désignée | **96,9 %** |
-| Écritures effectivement apurées | 1 270 (8,9 %) |
+| Durée du traitement complet | moins d'une minute (entre 37 et 59 secondes) |
+| Accord avec la comptable sur le statut d'apurement | 83,9 % |
+| Accord avec la comptable sur la contrepartie trouvée | 96,9 % |
+| Écritures apurées | 1 270 (8,9 %) |
 | Écritures sans contrepartie | 13 050 (91,1 %) |
 
-Un mot sur ces 83,9 %. Un accord total ne serait pas un meilleur résultat : il
-signifierait que l'outil se contente de reproduire ce que l'expert voyait déjà.
-L'écart est précisément l'endroit où la discussion commence — et c'est pour cela
-que le comptable peut refuser chaque proposition.
+Un mot sur les 83,9 %. Un accord total ne serait pas un meilleur résultat. Ça
+voudrait dire que l'application se contente de répéter ce que la comptable
+voyait déjà. L'écart, c'est justement là où la discussion commence, et c'est
+pour ça qu'elle peut refuser chaque proposition.
 
-## Le parti pris
+## Ce qui a guidé mes choix
 
-**La machine ne décide pas. Elle trie, et elle dit pourquoi.**
+L'application ne décide rien à la place du comptable. Elle trie, et elle
+explique. Aucune écriture n'est corrigée d'office, aucune proposition n'est
+enregistrée sans qu'une personne l'ait validée. Un modèle qui a raison tout seul
+ne sert à rien s'il n'y a pas moyen de le contredire.
 
-Aucune écriture n'est corrigée d'office. Aucune proposition n'est écrite sans
-qu'un humain l'ait validée. Un modèle qui a raison tout seul ne sert à rien s'il
-ne peut pas être contredit.
-
-C'est pourquoi l'analyse circule dans la hiérarchie réelle du service au lieu
-d'en créer une nouvelle : l'agent renseigne, le chef de section vise, le chef de
-service valide — et peut renvoyer le dossier en indiquant pourquoi.
+C'est aussi pour ça que j'ai calqué le circuit de validation sur la hiérarchie
+qui existait déjà, au lieu d'en inventer une autre.
 
 ![Circuit de validation](captures/circuit_validation.png)
 
 ![Statistiques](captures/statistiques.png)
 
-*Les statistiques d'un arrêté à l'autre : ce qui se referme, ce qui traîne, et
-le délai au-delà duquel une écriture cesse d'être une attente normale.*
+*Les statistiques d'un arrêté au suivant : ce qui se referme, ce qui traîne, et
+le délai au-delà duquel une écriture n'est plus une attente normale.*
 
----
-
-## Essayer
+## Essayer l'application
 
 ```bash
 git clone https://github.com/Chris-oliver01/sidac.git
@@ -135,58 +125,36 @@ pip install -r requirements.txt
 python app.py
 ```
 
-Puis ouvrir **http://127.0.0.1:5000**.
+Ouvrez ensuite http://127.0.0.1:5000.
 
 Au premier démarrage, l'application crée le compte `admin@sidac.local` et écrit
-son mot de passe — aléatoire — dans un fichier `PREMIERE_CONNEXION.txt` ; elle en
-demande aussitôt un nouveau. Aucun mot de passe ne figure dans le code.
+son mot de passe, tiré au hasard, dans un fichier `PREMIERE_CONNEXION.txt`. Elle
+en demande aussitôt un nouveau. Il n'y a aucun mot de passe dans le code.
 
-Pour voir l'application à l'œuvre, charger le fichier d'essai fourni :
+Pour voir l'application travailler, chargez le fichier d'essai :
 
 ```
-jeu_essai/ecritures_fictives.xlsx   —   1 210 écritures inventées
+jeu_essai/ecritures_fictives.xlsx
 ```
 
-Ce jeu est construit pour montrer quelque chose : des écritures qui s'apurent
-deux à deux, des doublons, des paiements en attente, des écritures jamais
-remontées et quelques montants franchement hors norme. L'analyse en retient
-940 apurées et 270 sans contrepartie.
+Il contient 1 210 écritures inventées. Je l'ai construit pour qu'on voie
+quelque chose : des écritures qui s'apurent deux à deux, des doublons, des
+paiements en attente, des écritures jamais remontées, et quelques montants
+vraiment hors norme. L'analyse en retient 940 apurées et 270 sans contrepartie.
 
-Par défaut, la base est un fichier SQLite local. Pour une base PostgreSQL
-partagée, renseigner la variable d'environnement `SIDAC_BDD`.
+Par défaut, les données sont rangées dans un fichier SQLite local. Pour utiliser
+une base PostgreSQL partagée entre plusieurs postes, il suffit de renseigner la
+variable d'environnement `SIDAC_BDD`.
 
-## Ce que ce dépôt ne contient pas, et pourquoi
+## Ce que j'ai utilisé
 
-Les écritures d'une banque centrale sont couvertes par le secret professionnel.
-Elles ne sortent pas de l'agence — et elles ne sont pas ici.
-
-Ne figurent donc dans ce dépôt **ni relevé, ni écriture réelle, ni rapport
-d'analyse produit dans le service, ni identifiant d'agent, ni mot de passe, ni
-élément d'identité visuelle de l'institution**.
-
-Ce qui est fourni à la place :
-
-- un **jeu d'essai entièrement inventé** — 1 210 écritures tirées au sort, avec
-  des tiers imaginaires, construit pour reproduire les situations que
-  l'application doit savoir traiter ;
-- des **captures d'écran produites à partir de ce seul jeu d'essai**. Tout ce
-  qui s'y lit — montants, libellés, dates, journaux — est fictif ;
-- des **chiffres de performance** issus du mémoire soutenu publiquement. Ce sont
-  des agrégats : ils ne permettent d'identifier aucune opération, aucun tiers,
-  aucun agent.
-
-Seule la **structure** du fichier d'entrée est fidèle au format d'un export
-comptable. C'est une description technique, pas une donnée.
-
-## Construit avec
-
-Python · Flask · SQLAlchemy · pandas · NumPy · scikit-learn · openpyxl ·
-bcrypt · Plotly
+Python, Flask, SQLAlchemy, pandas, NumPy, scikit-learn, openpyxl, bcrypt,
+Plotly.
 
 ## Auteur
 
-**BEMBA BEMBA Jean Chris-Oliver** — Bachelor Intelligence Artificielle & Big
-Data, KEYCE Douala.
-[LinkedIn](https://www.linkedin.com/in/chris-oliver-bemba-a04734325/)
+BEMBA BEMBA Jean Chris-Oliver, Bachelor Intelligence Artificielle et Big Data,
+KEYCE Douala.
+[Mon profil LinkedIn](https://www.linkedin.com/in/chris-oliver-bemba-a04734325/)
 
 Publié avec l'accord de mon encadreur de stage.
