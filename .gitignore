@@ -31,6 +31,9 @@ env_build/
 venv/
 .venv/
 
+# --- apercu local, pas destine a la publication ----------------------------
+apercu_github.html
+
 # --- sauvegardes et outils -------------------------------------------------
 *.avant_*
 *.log
