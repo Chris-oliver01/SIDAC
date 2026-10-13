@@ -81,6 +81,68 @@ refuser.
 (9 jours)". Le délai de référence n'est pas fixé à l'avance, il est calculé sur
 le relevé qu'on charge. Les noms de sociétés qu'on voit ici sont inventés.*
 
+## Le circuit de validation
+
+Une analyse ne vaut rien si personne ne la signe. Dans le service, un état des
+suspens passe par trois mains avant d'être arrêté, et j'ai repris ce chemin tel
+quel au lieu d'en inventer un autre.
+
+L'agent charge le relevé, lance l'analyse et renseigne chaque suspens. Quand il
+a fini, il transmet au chef de section. Le chef de section relit et vise, ou
+bien il renvoie le dossier à l'agent en écrivant pourquoi. Le chef de service
+valide en dernier, et c'est à ce moment-là que l'analyse est close.
+
+Chaque passage est horodaté et porte le nom de la personne. Une analyse validée
+se verrouille : pour la rouvrir, il faut un déverrouillage motivé, qui laisse
+lui aussi une trace.
+
+![Analyses à traiter](captures/circuit_validation.png)
+
+*La liste des analyses en cours. La colonne État dit où en est chaque dossier :
+en cours, transmise, visée ou validée.*
+
+## La mémoire d'un arrêté à l'autre
+
+Un suspens qui traîne depuis six mois n'a pas le même sens qu'un suspens apparu
+la semaine dernière. L'application s'en souvient donc d'un arrêté au suivant.
+
+Quand une écriture signalée en janvier trouve enfin sa contrepartie en mars, le
+système la reconnaît et referme le suspens tout seul, en gardant la date. Les
+écritures sont reconnues par une empreinte calculée sur le montant, le sens et
+le libellé, jamais en conservant le relevé lui-même : les écritures ne sont pas
+stockées en base, seulement le résultat de l'analyse et ce que les agents ont
+écrit.
+
+![Historique](captures/historique.png)
+
+*L'historique des analyses, avec leur état et le détail de chacune.*
+
+## Le reste de l'application
+
+**Des comptes et des rôles.** Chaque personne a son compte, avec son rôle :
+agent, chef de section, chef de service, ou administrateur. Les mots de passe
+sont chiffrés avec bcrypt, et un nouveau compte reçoit un mot de passe
+temporaire qu'il faut changer à la première connexion.
+
+**Une piste d'audit.** Toute action sensible est tracée automatiquement :
+connexions, analyses, créations et suppressions de comptes. L'administrateur la
+consulte depuis son panneau.
+
+![Panneau d'administration](captures/administration.png)
+
+**Trois langues.** L'interface est traduite en français, en anglais et en
+espagnol. On change de langue depuis le bouton en bas à gauche, sans se
+reconnecter.
+
+**Deux thèmes.** Clair ou sombre, au choix, gardé d'une visite à l'autre.
+
+**Un état Excel.** À la fin, l'application produit le fichier que le service
+utilisait déjà, avec ses couleurs par nature d'écriture et sa feuille de
+résumé. Les comptables n'ont pas eu à changer leurs habitudes.
+
+**Tout reste sur le poste.** Aucune donnée ne part sur Internet. L'application
+tourne en local, et c'est voulu.
+
 ## Les résultats
 
 Ces chiffres sont les vrais, mesurés dans l'agence sur le relevé de janvier à
@@ -107,9 +169,9 @@ enregistrée sans qu'une personne l'ait validée. Un modèle qui a raison tout s
 ne sert à rien s'il n'y a pas moyen de le contredire.
 
 C'est aussi pour ça que j'ai calqué le circuit de validation sur la hiérarchie
-qui existait déjà, au lieu d'en inventer une autre.
-
-![Circuit de validation](captures/circuit_validation.png)
+qui existait déjà, au lieu d'en inventer une autre, et que j'ai gardé le format
+Excel que le service connaissait. Un outil qu'il faut apprendre à utiliser avant
+d'en tirer quelque chose finit au placard.
 
 ![Statistiques](captures/statistiques.png)
 
