@@ -1,0 +1,41 @@
+# Ce fichier est une barriere : il empeche de pousser par accident ce qui ne
+# doit jamais quitter la Banque, ni le poste de travail.
+
+# --- donnees ---------------------------------------------------------------
+uploads/
+*.xls
+*.xlsx
+!jeu_essai/ecritures_fictives.xlsx
+Rapport_SIDAC_*.xlsx
+Releve*
+Rapprochement*
+
+# --- secrets ---------------------------------------------------------------
+.cle_session
+config_bdd.txt
+PREMIERE_CONNEXION.txt
+.env
+
+# --- bases de donnees ------------------------------------------------------
+*.db
+*.sqlite
+*.sqlite3
+
+# --- construction ----------------------------------------------------------
+build/
+dist/
+*.spec
+__pycache__/
+*.pyc
+env_build/
+venv/
+.venv/
+
+# --- sauvegardes et outils -------------------------------------------------
+*.avant_*
+*.log
+.vscode/
+.idea/
+.claude/
+Thumbs.db
+desktop.ini

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}{{ t('a_traiter_titre') }} - SIDAC | BEAC{% endblock %}
+
+{% block extra_style %}
+.cellule-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.lien-fiche { color: var(--gold); font-weight: 700; text-decoration: none; white-space: nowrap; }
+.form-inline { margin: 0; }
+.mini-btn {
+    padding: 6px 14px; border-radius: 8px; border: none; cursor: pointer;
+    font-family: inherit; font-size: 12px; font-weight: 700; white-space: nowrap;
+}
+.mini-viser { background: #1F4E79; color: #fff; }
+.mini-valider { background: #2E6B2E; color: #fff; }
+.mini-renseigner { background: #C9A227; color: #10141c; text-decoration: none; display: inline-block; }
+.mini-btn:hover { filter: brightness(1.15); }
+.pastille-etat { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.pastille-transmise { background: rgba(184,101,27,0.22); color: #d98026; }
+.pastille-visee     { background: rgba(31,78,121,0.28); color: #5b9bd5; }
+.vide-doux { color: var(--text-muted); font-size: 14px; padding: 26px 0; text-align: center; }
+{% endblock %}
+
+{% block content %}
+
+{# L'agent n'y trouve pas des analyses à viser mais les siennes, en cours :
+   le sous-titre parlait de visa et de validation à tout le monde. #}
+{% set est_agent = role_effectif in ('agent', 'admin') %}
+<div class="page-title">{{ t('a_traiter_titre') }}</div>
+<div class="page-subtitle">{{ t('a_traiter_soustitre_agent' if est_agent else 'a_traiter_soustitre') }}</div>
+
+<div class="results-section">
+    {% if historique %}
+    <table>
+        <thead>
+            <tr>
+                <th>{{ t('th_date') }}</th>
+                <th>{{ t('th_utilisateur') }}</th>
+                <th>{{ t('th_fichier') }}</th>
+                <th>{{ t('th_ecritures') }}</th>
+                <th>{{ t('th_total') }}</th>
+                <th>{{ t('lbl_etat') }}</th>
+                <th>{{ t('th_detail') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for h in historique %}
+            <tr>
+                <td>{{ h.date_analyse.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td>{{ h.utilisateur_nom }}</td>
+                <td>{{ h.fichier }}</td>
+                <td>{{ h.nb_ecritures }}</td>
+                <td><strong>{{ h.total }}</strong></td>
+                <td><span class="pastille-etat pastille-{{ h.etat }}">{{ t('etat_' + h.etat) }}</span></td>
+                <td class="cellule-actions">
+                    {# Pour l'agent, l'action attendue n'est pas de consulter
+                       mais de renseigner : le bouton le dit et mène droit au
+                       tableau de saisie. Une analyse déjà transmise reste
+                       listée pour qu'il en suive le sort, mais en simple
+                       consultation : elle ne lui appartient plus. #}
+                    {% if h.etat in (None, 'en_cours') %}
+                    <a href="/fiche/{{ h.id }}#suspens" class="mini-btn mini-renseigner">{{ t('btn_renseigner') }}</a>
+                    {% else %}
+                    <a href="/fiche/{{ h.id }}" class="lien-fiche">{{ t('lien_fiche') }}</a>
+                    {% endif %}
+                    {% if h.actions and h.actions.viser %}
+                    <form method="POST" action="/analyse/{{ h.id }}/viser" class="form-inline">
+                        <button class="mini-btn mini-viser">{{ t('btn_viser') }}</button>
+                    </form>
+                    {% elif h.actions and h.actions.valider %}
+                    <form method="POST" action="/analyse/{{ h.id }}/valider" class="form-inline">
+                        <button class="mini-btn mini-valider">{{ t('btn_valider') }}</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="vide-doux">{{ t('a_traiter_vide_agent' if est_agent else 'a_traiter_vide') }}</p>
+    {% endif %}
+</div>
+
+{% endblock %}

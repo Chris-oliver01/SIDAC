@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}{{ t('hist_title') }} - SIDAC | BEAC{% endblock %}
+
+{% block extra_style %}
+.cellule-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.lien-fiche { color: var(--gold); font-weight: 700; text-decoration: none; white-space: nowrap; }
+.form-inline { margin: 0; }
+.mini-btn {
+    padding: 5px 11px; border-radius: 8px; border: none; cursor: pointer;
+    font-family: inherit; font-size: 11.5px; font-weight: 700; white-space: nowrap;
+}
+.mini-viser { background: #1F4E79; color: #fff; }
+.mini-valider { background: #2E6B2E; color: #fff; }
+.mini-btn:hover { filter: brightness(1.15); }
+.bandeau-attente {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 18px; border-radius: 12px; margin-bottom: 18px;
+    background: rgba(184,101,27,0.16); border: 1px solid rgba(184,101,27,0.45);
+    color: var(--text); font-size: 13.5px; font-weight: 600;
+}
+.bandeau-attente strong { font-size: 17px; color: #d98026; }
+.pastille-etat { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.pastille-en_cours  { background: rgba(128,128,128,0.22); color: var(--text-muted); }
+.pastille-transmise { background: rgba(184,101,27,0.22); color: #d98026; }
+.pastille-visee     { background: rgba(31,78,121,0.28); color: #5b9bd5; }
+.pastille-validee   { background: rgba(46,107,46,0.25); color: #4e9a4e; }
+.filtre-zone { margin-bottom: 15px; }
+.filtre-zone input {
+    padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--input-bg); color: var(--text); font-size: 13px; width: 300px; outline: none;
+}
+.filtre-zone input:focus { border-color: var(--gold); }
+.btn-suppr-analyse { background: #8B0000; color: white; padding: 4px 12px; border-radius: 20px; text-decoration: none; font-size: 11px; font-weight: 700; }
+.btn-suppr-analyse:hover { background: #a80000; }
+{% endblock %}
+
+{% block content %}
+
+<div class="page-title">{{ t('hist_title') }}</div>
+<div class="page-subtitle">{{ t('hist_subtitle_all') if role == 'admin' else t('hist_subtitle_own') }}</div>
+
+<div class="results-section">
+    <h3>{{ t('hist_section') }}</h3>
+
+    <div class="filtre-zone">
+        <input type="text" id="filtre" placeholder="{{ t('hist_filtre') }}"
+               onkeyup="filtrerTableau()">
+    </div>
+
+    {% if a_traiter %}
+    <div class="bandeau-attente">
+        <strong>{{ a_traiter }}</strong> {{ t('msg_a_traiter') }}
+    </div>
+    {% endif %}
+
+    {% if historique %}
+    <table id="table-historique">
+        <thead>
+            <tr>
+                <th>{{ t('th_date') }}</th>
+                <th>{{ t('th_utilisateur') }}</th>
+                <th>{{ t('th_fichier') }}</th>
+                <th>{{ t('th_ecritures') }}</th>
+                <th>{{ t('card_doublons') }}</th>
+                <th>{{ t('th_anormaux') }}</th>
+                <th>{{ t('th_deseq') }}</th>
+                <th>{{ t('card_extournes') }}</th>
+                <th>{{ t('th_total') }}</th>
+                <th>{{ t('lbl_etat') }}</th>
+                <th>{{ t('th_detail') }}</th>
+                {% if role == 'admin' %}<th>{{ t('th_action') }}</th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for h in historique %}
+            <tr>
+                <td>{{ h.date_analyse.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td>{{ h.utilisateur_nom }}</td>
+                <td>{{ h.fichier }}</td>
+                <td>{{ h.nb_ecritures }}</td>
+                <td>{{ h.doublons }}</td>
+                <td>{{ h.anormaux }}</td>
+                <td>{{ h.deseq }}</td>
+                <td>{{ h.extournes }}</td>
+                <td><strong>{{ h.total }}</strong></td>
+                <td><span class="pastille-etat pastille-{{ h.etat or 'en_cours' }}">{{ t('etat_' + (h.etat or 'en_cours')) }}</span></td>
+                <td class="cellule-actions">
+                    <a href="/fiche/{{ h.id }}" class="lien-fiche">{{ t('lien_fiche') }}</a>
+                    {# L'action attendue est proposée ici : passer par la fiche
+                       pour un simple envoi faisait trois clics de trop. #}
+                    {% if h.actions and h.actions.transmettre %}
+                    <form method="POST" action="/analyse/{{ h.id }}/transmettre" class="form-inline">
+                        <button class="mini-btn mini-viser">{{ t('btn_transmettre') }}</button>
+                    </form>
+                    {% elif h.actions and h.actions.viser %}
+                    <form method="POST" action="/analyse/{{ h.id }}/viser" class="form-inline">
+                        <button class="mini-btn mini-viser">{{ t('btn_viser') }}</button>
+                    </form>
+                    {% elif h.actions and h.actions.valider %}
+                    <form method="POST" action="/analyse/{{ h.id }}/valider" class="form-inline">
+                        <button class="mini-btn mini-valider">{{ t('btn_valider') }}</button>
+                    </form>
+                    {% endif %}
+                </td>
+                {% if role == 'admin' %}
+                <td>
+                    <form method="POST" action="/historique/supprimer/{{ h.id }}" style="display:inline"
+                          onsubmit="return confirm('Supprimer définitivement cette analyse ?')">
+                        <button type="submit" class="btn-suppr-analyse">{{ t('btn_supprimer') }}</button>
+                    </form>
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="vide">{{ t('hist_vide') }}</p>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_script %}
+<script>
+function filtrerTableau() {
+    const filtre = document.getElementById('filtre').value.toLowerCase();
+    const lignes = document.querySelectorAll('#table-historique tbody tr');
+    lignes.forEach(ligne => {
+        const texte = ligne.textContent.toLowerCase();
+        ligne.style.display = texte.includes(filtre) ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

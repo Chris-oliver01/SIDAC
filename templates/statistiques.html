@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}{{ t('stat_title') }} - SIDAC | BEAC{% endblock %}
+
+{% block extra_style %}
+.stat-carte-mini {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px; text-align: center;
+}
+.stat-carte-mini .valeur { color: var(--gold); font-size: 28px; font-weight: 900; margin-bottom: 4px; }
+.stat-carte-mini .label { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
+
+.prevision-box {
+    display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+}
+.prevision-chiffre {
+    background: linear-gradient(135deg, #1F4E79, #12365c);
+    border-radius: 14px; padding: 20px 28px; text-align: center; color: white; min-width: 200px;
+}
+.prevision-chiffre .grand { font-size: 40px; font-weight: 900; color: #E8C547; }
+.prevision-chiffre .petit { font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px; opacity: 0.85; }
+.prevision-chiffre .marge { font-size: 13px; margin-top: 6px; opacity: 0.9; }
+.prevision-note { flex: 1; min-width: 260px; color: var(--text-muted); font-size: 13px; line-height: 1.6; }
+.prevision-badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+    background: rgba(201,162,39,0.18); color: var(--gold); margin-bottom: 8px;
+}
+.graphique-zone {
+    width: 100%; min-width: 280px; min-height: 320px;
+}
+.titre-actions { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.btn-imprimer {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 9px 18px; border-radius: 10px; border: 1px solid var(--gold);
+    background: transparent; color: var(--gold);
+    font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+}
+.btn-imprimer:hover { background: rgba(201,162,39,0.12); }
+.btn-imprimer svg { width: 15px; height: 15px; stroke: currentColor; }
+{% endblock %}
+
+{% block content %}
+
+<div class="titre-actions">
+    <div>
+        <div class="page-title">{{ t('stat_title') }}</div>
+        <div class="page-subtitle">{{ t('stat_subtitle_all') if role == 'admin' else t('stat_subtitle_own') }}</div>
+    </div>
+    {% if nb_analyses > 0 %}
+    <button class="btn-imprimer" type="button" onclick="window.print()">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        {{ t('stat_imprimer') }}
+    </button>
+    {% endif %}
+</div>
+
+{% if nb_analyses == 0 %}
+<div class="results-section">
+    <p class="vide">{{ t('stat_vide') }}</p>
+</div>
+{% endif %}
+
+{% if nb_analyses > 0 %}
+<div class="stats-grid">
+    <div class="stat-carte-mini">
+        <div class="valeur">{{ nb_analyses }}</div>
+        <div class="label">{{ t('stat_card_analyses') }}</div>
+    </div>
+    <div class="stat-carte-mini">
+        <div class="valeur">{{ totaux[-1]|nombre }}</div>
+        <div class="label">{{ t('stat_card_derniere') }}</div>
+    </div>
+    <div class="stat-carte-mini">
+        <div class="valeur">{{ moyenne_mobile[-1]|nombre }}</div>
+        <div class="label">{{ t('stat_card_moyenne') }}</div>
+    </div>
+</div>
+
+{% if prevision %}
+<div class="results-section">
+    <h3>{{ t('stat_prev_title') }}</h3>
+    <div class="prevision-box">
+        <div class="prevision-chiffre">
+            <div class="petit">{{ t('stat_prev_valeur') }}</div>
+            <div class="grand">{{ prevision.estimation|nombre }}</div>
+            {% if prevision.marge is not none %}
+            <div class="marge">{{ t('stat_prev_intervalle') }} : {{ (prevision.estimation - prevision.marge if (prevision.estimation - prevision.marge) > 0 else 0)|nombre }} à {{ (prevision.estimation + prevision.marge)|nombre }}</div>
+            {% endif %}
+        </div>
+        <div class="prevision-note">
+            <span class="prevision-badge">Fiabilité {{ prevision.fiabilite }}</span><br>
+            {{ prevision.note }}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="results-section">
+    <h3>{{ t('stat_sec_evolution') }}</h3>
+    <div id="graphique-evolution" class="graphique-zone"></div>
+</div>
+
+<div class="results-section">
+    <h3>{{ t('stat_sec_repartition') }}</h3>
+    <div id="graphique-repartition" class="graphique-zone"></div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_script %}
+{% if nb_analyses > 0 %}
+<div id="stats-data"
+     data-dates='{{ dates | tojson | safe }}'
+     data-totaux='{{ totaux | tojson | safe }}'
+     data-moyenne='{{ moyenne_mobile | tojson | safe }}'
+     data-doublons='{{ doublons | tojson | safe }}'
+     data-anormaux='{{ anormaux | tojson | safe }}'
+     data-deseq='{{ deseq | tojson | safe }}'
+     data-extournes='{{ extournes | tojson | safe }}'
+     data-prevision='{{ prevision.estimation if prevision else "null" }}'
+     data-label-total='{{ t("stat_serie_total") | e }}'
+     data-label-moyenne='{{ t("stat_serie_moyenne") | e }}'
+     data-label-prev='{{ t("stat_prev_valeur") | e }}'
+     data-label-doublons='{{ t("card_doublons") | e }}'
+     data-label-anormaux='{{ t("card_anormaux") | e }}'
+     data-label-deseq='{{ t("card_deseq") | e }}'
+     data-label-extournes='{{ t("card_extournes") | e }}'
+     data-label-anomalies='{{ t("graph_anomalies") | e }}'
+     hidden></div>
+{# Servi localement : voir la note du meme bloc dans dashboard.html. #}
+<script src="{{ url_for('static', filename='plotly.min.js') }}"></script>
+<script>
+function tracerGraphesStats() {
+    const c = sidacChartColors();
+    const data = document.getElementById('stats-data');
+    const dates = JSON.parse(data.getAttribute('data-dates') || '[]');
+    const totaux = JSON.parse(data.getAttribute('data-totaux') || '[]');
+    const moyenneMobile = JSON.parse(data.getAttribute('data-moyenne') || '[]');
+    const doublons = JSON.parse(data.getAttribute('data-doublons') || '[]');
+    const anormaux = JSON.parse(data.getAttribute('data-anormaux') || '[]');
+    const deseq = JSON.parse(data.getAttribute('data-deseq') || '[]');
+    const extournes = JSON.parse(data.getAttribute('data-extournes') || '[]');
+    const prevEstimation = data.getAttribute('data-prevision');
+    const prevValue = prevEstimation && prevEstimation !== 'null' ? Number(prevEstimation) : null;
+
+    const labels = {
+        total: data.getAttribute('data-label-total') || 'Total',
+        moyenne: data.getAttribute('data-label-moyenne') || 'Moyenne',
+        prev: data.getAttribute('data-label-prev') || 'Prévision',
+        doublons: data.getAttribute('data-label-doublons') || 'Doublons',
+        anormaux: data.getAttribute('data-label-anormaux') || 'Anormaux',
+        deseq: data.getAttribute('data-label-deseq') || 'Déséquilibres',
+        extournes: data.getAttribute('data-label-extournes') || 'Extournés',
+        anomalies: data.getAttribute('data-label-anomalies') || 'Anomalies'
+    };
+
+    const evoData = [
+        {
+            type: 'scatter', mode: 'lines+markers', name: labels.total,
+            x: dates, y: totaux,
+            line: { color: '#E8C547', width: 2 }, marker: { size: 7 }
+        },
+        {
+            type: 'scatter', mode: 'lines', name: labels.moyenne,
+            x: dates, y: moyenneMobile,
+            line: { color: '#7ec8e3', width: 2, dash: 'dot' }
+        }
+    ];
+    if (prevValue !== null) {
+        const dernier = dates[dates.length - 1];
+        const dernierY = totaux[totaux.length - 1];
+        evoData.push({
+            type: 'scatter', mode: 'lines+markers', name: labels.prev,
+            x: [dernier, '→'], y: [dernierY, prevValue],
+            line: { color: '#C00000', width: 2, dash: 'dash' },
+            marker: { size: 9, symbol: 'star' }
+        });
+    }
+
+    Plotly.newPlot('graphique-evolution', evoData, {
+        paper_bgcolor: c.paper, plot_bgcolor: c.plot,
+        font: { color: c.font, size: 13 },
+        separators: ', ',   // virgule decimale, espace pour les milliers
+        xaxis: { gridcolor: c.grid, tickfont: { size: 12 }, tickangle: -30, nticks: 10 },
+        yaxis: { gridcolor: c.grid, title: labels.anomalies, tickfont: { size: 12 },
+                 tickformat: ',d', rangemode: 'tozero' },
+        legend: { orientation: 'h', y: -0.35, font: { size: 13 } },
+        margin: { t: 20, b: 80, l: 78, r: 20 }
+    }, {responsive: true});
+
+    Plotly.newPlot('graphique-repartition', [
+        { type: 'bar', name: labels.doublons, x: dates, y: doublons, marker: { color: '#C9A227' } },
+        { type: 'bar', name: labels.anormaux, x: dates, y: anormaux, marker: { color: '#C00000' } },
+        { type: 'bar', name: labels.deseq, x: dates, y: deseq, marker: { color: '#1F4E79' } },
+        { type: 'bar', name: labels.extournes, x: dates, y: extournes, marker: { color: '#5C1A5C' } }
+    ], {
+        barmode: 'stack',
+        paper_bgcolor: c.paper, plot_bgcolor: c.plot,
+        font: { color: c.font, size: 13 },
+        separators: ', ',   // virgule decimale, espace pour les milliers
+        xaxis: { gridcolor: c.grid, tickfont: { size: 12 }, tickangle: -30, nticks: 10 },
+        yaxis: { gridcolor: c.grid, tickfont: { size: 12 },
+                 tickformat: ',d', rangemode: 'tozero' },
+        legend: { orientation: 'h', y: -0.35, font: { size: 13 } },
+        margin: { t: 20, b: 80, l: 78, r: 20 }
+    }, {responsive: true});
+}
+tracerGraphesStats();
+window.sidacRedrawCharts = tracerGraphesStats;
+</script>
+{% endif %}
+{% endblock %}

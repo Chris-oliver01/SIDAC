@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription - SIDAC | BEAC</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { display: flex; height: 100vh; }
+
+        .left {
+            width: 45%;
+            background: linear-gradient(160deg, #1F4E79, #12365c);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            text-align: center;
+        }
+        .left img { width: 140px; margin-bottom: 25px; }
+        .left h1 {
+            color: white;
+            font-size: 54px;
+            font-weight: 300;
+            letter-spacing: 14px;
+        }
+        .left .divider { width: 70px; height: 2px; background: #C9A227; margin: 18px 0; }
+        .left p { color: #C9A227; font-size: 14px; line-height: 1.8; letter-spacing: 1px; }
+        .left .agence {
+            color: rgba(255,255,255,0.7);
+            font-size: 12px;
+            margin-top: 15px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        .left .nom-appli {
+            margin-top: 30px;
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+        }
+        .left .plateforme {
+            color: white;
+            font-size: 15px;
+            font-weight: 300;
+            letter-spacing: 3px;
+        }
+        .left .sigle {
+            color: #E8C547;
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: 4px;
+            font-family: Georgia, 'Times New Roman', serif;
+        }
+
+        .right {
+            width: 55%;
+            background: #F5F5F5;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 60px;
+            overflow-y: auto;
+        }
+        h2 { font-size: 26px; color: #1A1A2E; font-weight: 700; margin-bottom: 5px; }
+        .subtitle { color: #666; font-size: 13px; margin-bottom: 25px; text-align: center; }
+        .form-group { width: 100%; margin-bottom: 15px; }
+        .row { display: flex; gap: 15px; width: 100%; }
+        .row .form-group { flex: 1; }
+        label { display: block; font-size: 11px; font-weight: 700; color: #555; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .input-wrapper { position: relative; width: 100%; }
+
+        input {
+            width: 100%; padding: 12px 40px 12px 16px;
+            border: 2px solid #E0E0E0; border-radius: 8px;
+            font-size: 14px; background: white; outline: none;
+            transition: border 0.3s;
+        }
+        input:focus { border-color: #C9A227; }
+        input.champ-erreur { border-color: #C00000; background: #fff5f5; }
+
+        .toggle-mdp {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+            opacity: 0.5;
+        }
+        .toggle-mdp:hover { opacity: 1; }
+
+        .service-fixe {
+            width: 100%; padding: 12px 16px;
+            border: 2px solid #E0E0E0; border-radius: 8px;
+            font-size: 14px; background: #EFEFEF; color: #333;
+            font-weight: 600;
+        }
+        .btn {
+            width: 100%; padding: 14px;
+            background: #1F4E79; color: white;
+            border: none; border-radius: 8px;
+            font-size: 15px; font-weight: 700;
+            cursor: pointer; margin-top: 8px;
+            transition: background 0.3s;
+        }
+        .btn:hover { background: #C9A227; color: #1A1A2E; }
+
+        .aide-mdp {
+            font-size: 11px;
+            color: #888;
+            margin-top: 5px;
+            line-height: 1.5;
+        }
+
+        .erreur-mdp {
+            color: #C00000;
+            font-size: 12px;
+            margin-top: 6px;
+            font-weight: 600;
+        }
+        .links { margin-top: 15px; text-align: center; font-size: 13px; color: #666; }
+        .links a { color: #C9A227; font-weight: 700; text-decoration: none; }
+
+        @media (max-width: 800px) {
+            body { flex-direction: column; height: auto; min-height: 100vh; }
+            .left { width: 100%; padding: 30px; }
+            .left h1 { font-size: 38px; }
+            .left img { width: 90px; margin-bottom: 15px; }
+            .right { width: 100%; padding: 30px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="left">
+        <img src="/static/logo_sidac.svg" alt="SIDAC">
+        <h1>BEAC</h1>
+        <div class="divider"></div>
+        <p>Banque des États de<br>l'Afrique Centrale</p>
+        <p class="agence">Agence de Douala</p>
+        <div class="nom-appli">
+            <span class="plateforme">Plateforme</span>
+            <span class="sigle">SIDAC</span>
+        </div>
+    </div>
+
+    <div class="right">
+        <h2>Créer un compte</h2>
+        <p class="subtitle">Remplissez le formulaire pour accéder au système</p>
+
+        <form method="POST" style="width:100%" autocomplete="off">
+            <div class="row">
+                <div class="form-group">
+                    <label>Nom</label>
+                    <input type="text" name="nom" value="{{ request.form.nom or '' }}" required>
+                </div>
+                <div class="form-group">
+                    <label>Prénom</label>
+                    <input type="text" name="prenom" value="{{ request.form.prenom or '' }}" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Email professionnel</label>
+                <input type="email" name="email" autocomplete="off"
+                       value="{{ request.form.email or '' }}"
+                       pattern=".+@beac\.int"
+                       title="L'email doit se terminer par @beac.int" required>
+            </div>
+            <div class="form-group">
+                <label>Service / Département</label>
+                <div class="service-fixe">Comptabilité</div>
+                <input type="hidden" name="service" value="Comptabilité">
+            </div>
+            <div class="row">
+                <div class="form-group">
+                    <label>Mot de passe</label>
+                    <div class="input-wrapper">
+                        <input type="password" name="mdp" id="mdp" autocomplete="new-password"
+                               {% if erreur %}class="champ-erreur"{% endif %} required>
+                        <svg class="toggle-mdp"
+                             onmousedown="voirMdp('mdp', true)"
+                             onmouseup="voirMdp('mdp', false)"
+                             onmouseleave="voirMdp('mdp', false)"
+                             viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </div>
+                    <div class="aide-mdp">
+                        Minimum 8 caractères, au moins 1 majuscule et 1 chiffre.
+                    </div>
+                    {% if erreur %}
+                    <div class="erreur-mdp">{{ erreur }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label>Confirmer</label>
+                    <div class="input-wrapper">
+                        <input type="password" name="mdp2" id="mdp2" autocomplete="new-password" required>
+                        <svg class="toggle-mdp"
+                             onmousedown="voirMdp('mdp2', true)"
+                             onmouseup="voirMdp('mdp2', false)"
+                             onmouseleave="voirMdp('mdp2', false)"
+                             viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <button class="btn" type="submit">CRÉER MON COMPTE</button>
+        </form>
+        <div class="links">
+            <p>Déjà un compte ? <a href="/login">Se connecter</a></p>
+        </div>
+    </div>
+
+<script>
+function voirMdp(id, visible) {
+    document.getElementById(id).type = visible ? 'text' : 'password';
+}
+</script>
+
+</body>
+</html>

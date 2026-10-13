@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+{% block title %}{{ t('admin_title') }} - SIDAC | BEAC{% endblock %}
+
+{% block extra_style %}
+.btn-supprimer { background: #8B0000; color: white; padding: 5px 13px; border-radius: 20px; text-decoration: none; font-size: 11px; font-weight: 700; }
+.btn-supprimer:hover { background: #a80000; }
+.btn-reinit { background: #1F4E79; color: white; padding: 5px 13px; border-radius: 20px; text-decoration: none; font-size: 11px; font-weight: 700; margin-right: 6px; }
+.btn-reinit:hover { background: #2a679e; }
+
+.mdp-genere { position: relative; }
+.fermer-mdp {
+    position: absolute; top: 8px; right: 12px;
+    background: none; border: none; cursor: pointer;
+    color: var(--text-muted); font-size: 22px; line-height: 1; padding: 0;
+}
+.fermer-mdp:hover { color: var(--gold); }
+.creer-agent-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; align-items: end; }
+.champ label { display: block; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+.champ input {
+    width: 100%; padding: 10px 12px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--input-bg); color: var(--text); font-size: 13px; outline: none;
+}
+.champ input:focus { border-color: var(--gold); }
+.champ-select {
+    width: 100%; padding: 10px 12px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--input-bg);
+    color: var(--text); font-size: 13px; font-family: inherit; outline: none;
+}
+.champ-select:focus { border-color: var(--gold); }
+.service-fixe {
+    padding: 10px 12px; border-radius: 8px;
+    border: 1px dashed var(--border); background: var(--surface-2);
+    color: var(--text-muted); font-size: 13px; font-weight: 600;
+}
+.btn-creer {
+    background: linear-gradient(135deg, #C9A227, #E8C547); color: #10141c;
+    border: none; padding: 11px 20px; border-radius: 8px;
+    font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+}
+.btn-creer:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(201,162,39,0.4); }
+.form-info { color: var(--text-muted); font-size: 12px; margin-bottom: 16px; line-height: 1.5; }
+.mdp-genere {
+    margin-top: 16px; padding: 16px 18px; border-radius: 10px;
+    background: rgba(44,95,46,0.15); border: 1px solid rgba(44,95,46,0.5);
+    color: var(--text); font-size: 14px;
+}
+.mdp-genere .code {
+    font-family: 'Consolas', monospace; font-size: 18px; font-weight: 900;
+    color: var(--gold); letter-spacing: 1px; user-select: all;
+}
+.creer-erreur {
+    margin-top: 12px; padding: 12px 16px; border-radius: 8px;
+    background: rgba(139,0,0,0.2); border: 1px solid #C00000; color: #d13232; font-size: 13px; font-weight: 600;
+}
+
+/* ===== Panneaux pilotés par le sous-menu Administration de la sidebar ===== */
+.tab-panel { display: none; }
+.tab-panel.actif { display: block; }
+
+/* ===== Journal d'audit ===== */
+.badge-action {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.badge-connexion { background: rgba(44,95,46,0.25); color: #4e9e52; }
+.badge-analyse { background: rgba(31,78,121,0.25); color: #4d8fc9; }
+.badge-compte { background: rgba(201,162,39,0.2); color: var(--gold); }
+.badge-suppression { background: rgba(139,0,0,0.25); color: #d13232; }
+.badge-autre { background: rgba(128,128,128,0.2); color: var(--text-muted); }
+{% endblock %}
+
+{% block content %}
+
+{% set onglet = request.args.get('onglet', 'audit') %}
+
+<div class="page-title">{{ t('admin_title') }}</div>
+<div class="page-subtitle">{{ t('admin_subtitle') }}</div>
+
+<div class="results-section tab-panel {{ 'actif' if onglet == 'creer' else '' }}" id="panel-creer">
+    <h3>{{ t('admin_creer_h3') }}</h3>
+    <p class="form-info">{{ t('admin_creer_info') }}</p>
+    <form method="POST" action="/admin/creer-agent" class="creer-agent-form">
+        <div class="champ">
+            <label>{{ t('admin_label_nom') }}</label>
+            <input type="text" name="nom" required>
+        </div>
+        <div class="champ">
+            <label>{{ t('admin_label_email') }}</label>
+            <input type="email" name="email" required>
+        </div>
+        <div class="champ">
+            <label>{{ t('admin_label_service') }}</label>
+            <div class="service-fixe">Comptabilité</div>
+        </div>
+        <div class="champ">
+            <label>{{ t('admin_label_role') }}</label>
+            <select name="role" class="champ-select">
+                <option value="agent">{{ t('role_agent') }}</option>
+                <option value="chef_section">{{ t('role_chef_section') }}</option>
+                <option value="chef_service">{{ t('role_chef_service') }}</option>
+            </select>
+        </div>
+        <div class="champ">
+            <button type="submit" class="btn-creer">{{ t('admin_btn_creer') }}</button>
+        </div>
+    </form>
+    {% if creer_erreur %}
+    <div class="creer-erreur">{{ creer_erreur }}</div>
+    {% endif %}
+    {% if mdp_genere %}
+    {# Le message se referme d'un clic, et s'efface dès qu'on recommence à
+       saisir : il restait affiché pendant la création du compte suivant. #}
+    <div class="mdp-genere" id="bloc-mdp">
+        <button type="button" class="fermer-mdp" onclick="document.getElementById('bloc-mdp').remove()"
+                title="{{ t('btn_fermer') }}">&times;</button>
+        {{ t('admin_mdp_genere') }} <strong>{{ agent_cree }}</strong> :<br><br>
+        <span class="code">{{ mdp_genere }}</span>
+    </div>
+    <script>
+    document.querySelectorAll('.creer-agent-form input').forEach(function (champ) {
+        champ.addEventListener('input', function () {
+            const bloc = document.getElementById('bloc-mdp');
+            if (bloc) { bloc.remove(); }
+        }, { once: true });
+    });
+    </script>
+    {% endif %}
+</div>
+
+<div class="results-section tab-panel {{ 'actif' if onglet == 'users' else '' }}" id="panel-users">
+    <h3>{{ t('admin_users_h3') }}</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>{{ t('th_nom') }}</th>
+                <th>{{ t('th_email') }}</th>
+                <th>{{ t('th_service') }}</th>
+                <th>{{ t('th_role') }}</th>
+                <th>{{ t('th_date_creation') }}</th>
+                <th>{{ t('th_action') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr>
+                <td>{{ u.nom }}</td>
+                <td>{{ u.email }}</td>
+                <td>{{ u.service }}</td>
+                <td>
+                    {% if u.role == 'admin' %}
+                    <span class="badge-admin">{{ t('role_admin') }}</span>
+                    {% elif u.role == 'chef_service' %}
+                    <span class="badge-action badge-analyse">{{ t('role_chef_service') }}</span>
+                    {% elif u.role == 'chef_section' %}
+                    <span class="badge-action badge-compte">{{ t('role_chef_section') }}</span>
+                    {% else %}
+                    <span class="badge-user">{{ t('role_agent') }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ u.date_creation.strftime('%d/%m/%Y') if u.date_creation else '-' }}</td>
+                <td>
+                    {% if u.role != 'admin' %}
+{# F4 : une action qui modifie l'etat ne peut pas etre un simple lien.
+                       Un lien se declenche par une balise image, un prechargement
+                       du navigateur ou un scanner d'URL. #}
+                    <form method="POST" action="/admin/reinitialiser/{{ u.id }}" style="display:inline"
+                          onsubmit="return confirm('Générer un nouveau mot de passe temporaire pour cet agent ?')">
+                        <button type="submit" class="btn-reinit">{{ t('btn_reinit') }}</button>
+                    </form>
+                    <form method="POST" action="/admin/supprimer/{{ u.id }}" style="display:inline"
+                          onsubmit="return confirm('Supprimer cet utilisateur ?')">
+                        <button type="submit" class="btn-supprimer">{{ t('btn_supprimer') }}</button>
+                    </form>
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if mdp_reinit %}
+    <div class="mdp-genere">
+        {{ t('admin_mdp_reinit') }} <strong>{{ agent_reinit }}</strong> :<br><br>
+        <span class="code">{{ mdp_reinit }}</span>
+    </div>
+    {% endif %}
+</div>
+
+{# L'onglet « Historique complet » a été retiré le 2026-08-09 : il faisait
+   doublon avec la page Historique de la barre latérale, qui montre déjà
+   toutes les analyses à un administrateur et donne accès aux fiches. #}
+
+<div class="results-section tab-panel {{ 'actif' if onglet == 'audit' else '' }}" id="panel-audit">
+    <h3>{{ t('admin_audit_h3') }}</h3>
+    <p class="form-info">{{ t('admin_audit_info') }}</p>
+    {% if audit %}
+    <table>
+        <thead>
+            <tr>
+                <th>{{ t('th_date') }}</th>
+                <th>{{ t('th_utilisateur') }}</th>
+                <th>{{ t('th_role') }}</th>
+                <th>{{ t('th_action') }}</th>
+                <th>{{ t('th_details') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in audit %}
+            <tr>
+                <td>{{ a.date_action.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                <td>{{ a.utilisateur }}</td>
+                <td>{{ a.role_affiche }}</td>
+                <td>
+                    {% if 'onnexion' in a.action %}
+                    <span class="badge-action badge-connexion">{{ a.action_affichee }}</span>
+                    {% elif 'nalyse lancée' in a.action or 'éléchargé' in a.action %}
+                    <span class="badge-action badge-analyse">{{ a.action_affichee }}</span>
+                    {% elif 'ompte' in a.action or 'ot de passe' in a.action %}
+                    <span class="badge-action badge-compte">{{ a.action_affichee }}</span>
+                    {% elif 'upprim' in a.action %}
+                    <span class="badge-action badge-suppression">{{ a.action_affichee }}</span>
+                    {% else %}
+                    <span class="badge-action badge-autre">{{ a.action_affichee }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ a.details }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="vide">{{ t('audit_vide') }}</p>
+    {% endif %}
+</div>
+
+{% endblock %}
+

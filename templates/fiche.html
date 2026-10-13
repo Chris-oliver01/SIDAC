@@ -1,0 +1,768 @@
+{% extends "base.html" %}
+{% block title %}{{ t('fiche_title') }} - SIDAC | BEAC{% endblock %}
+
+{% block extra_style %}
+.info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
+.info-carte {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px; text-align: center;
+}
+.info-valeur { color: var(--gold); font-size: 22px; font-weight: 900; margin-bottom: 4px; }
+.info-label { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px; }
+.btn-retour {
+    display: inline-block;
+    padding: 9px 18px; margin-bottom: 18px;
+    border-radius: 10px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text);
+    font-size: 13px; font-weight: 600; text-decoration: none;
+    transition: all 0.2s;
+}
+.btn-retour:hover { border-color: var(--gold); color: var(--gold); }
+.barre-fiche { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 18px; }
+.barre-fiche .btn-retour { margin-bottom: 0; }
+.btn-rapport {
+    display: inline-block;
+    padding: 9px 18px; border-radius: 10px; border: 1px solid var(--gold);
+    background: var(--gold); color: #10141c;
+    font-size: 13px; font-weight: 700; text-decoration: none;
+    transition: all 0.2s;
+}
+.btn-rapport:hover { filter: brightness(1.08); }
+.rapport-absent { color: var(--text-muted); font-size: 12.5px; }
+.graphes-fiche { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; margin-bottom: 25px; }
+
+/* Circuit de validation : l'état de l'analyse et les actions du profil. */
+.bandeau-etat {
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+    padding: 13px 18px; border-radius: 12px; margin-bottom: 18px;
+    border: 1px solid var(--border); background: var(--surface);
+}
+.pastille { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+.pastille-en_cours  { background: rgba(128,128,128,0.22); color: var(--text); }
+.pastille-transmise { background: rgba(184,101,27,0.22); color: #d98026; }
+.pastille-visee     { background: rgba(31,78,121,0.28); color: #5b9bd5; }
+.pastille-validee   { background: rgba(46,107,46,0.25); color: #4e9a4e; }
+.etat-detail { color: var(--text-muted); font-size: 12.5px; }
+.btn-circuit {
+    padding: 9px 18px; border-radius: 10px; border: none; cursor: pointer;
+    font-size: 13px; font-weight: 700; font-family: inherit;
+}
+.btn-viser   { background: #1F4E79; color: white; }
+.btn-valider { background: #2E6B2E; color: white; }
+.btn-renvoyer{ background: transparent; color: #C00000; border: 1px solid #C00000; }
+.btn-circuit:hover { filter: brightness(1.12); }
+.zone-renvoi { display: none; gap: 8px; margin-top: 10px; width: 100%; align-items: center; }
+.choix-renvoi { display: inline-flex; gap: 10px; }
+.destinataire-renvoi { color: var(--text-muted); font-size: 12.5px; font-weight: 600; }
+.btn-annuler { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+.zone-renvoi.ouverte { display: flex; flex-wrap: wrap; }
+.zone-renvoi input {
+    flex: 1 1 280px; padding: 9px 12px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text);
+    font-family: inherit; font-size: 13px;
+}
+.note-suspens { color: var(--text-muted); font-size: 12.5px; margin-bottom: 12px; }
+.table-suspens { font-size: 12.5px; }
+.champ-annotation {
+    width: 100%; min-width: 140px; padding: 6px 9px; border-radius: 7px;
+    border: 1px solid var(--border); background: var(--input-bg);
+    color: var(--text); font-family: inherit; font-size: 12.5px; outline: none;
+    /* La zone s'etire vers le bas si l'agent ecrit long, jamais sur les
+       colonnes voisines. */
+    resize: vertical; line-height: 1.45;
+}
+.champ-annotation:focus { border-color: var(--gold); }
+.champ-annotation::placeholder { font-style: italic; opacity: 0.55; }
+.btn-enregistrer { margin-top: 14px; }
+
+/* La présomption justifie la nature affichée : elle se lit en retrait, sous
+   le libellé, pour que l'agent voie sur quoi l'application se fonde sans que
+   cela concurrence les colonnes chiffrées. */
+.presomption {
+    color: var(--text-muted); font-size: 11px; font-style: italic;
+    margin-top: 4px; line-height: 1.45; max-width: 260px;
+}
+/* La proposition n'est jamais écrite d'office dans le champ : ce bouton la
+   recopie si l'agent la retient. Sans cela, une analyse non voulue pourrait
+   remonter le circuit de validation sans que personne l'ait rédigée. */
+.btn-proposition {
+    margin-top: 5px; padding: 3px 9px; border-radius: 6px; cursor: pointer;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--text-muted); font-family: inherit; font-size: 10.5px;
+}
+.btn-proposition:hover { border-color: var(--gold); color: var(--gold); }
+.btn-proposition:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+/* Repère de saisie : la ligne en cours se détache, comme dans un tableur. */
+.table-suspens tbody tr:focus-within { background: rgba(201,162,39,0.08); }
+/* L'en-tête reste visible quand on descend dans une longue liste. */
+/* L'en-tete est collant : il lui faut un fond opaque, sinon les lignes
+   defilent au travers. Il utilisait var(--card-bg), variable qui n'est
+   definie nulle part : le repli #16202e s'appliquait donc TOUJOURS, y compris
+   en theme clair, ou le titre bleu fonce devenait illisible sur bleu nuit.
+   --th-bg suit le theme, c'est la variable des en-tetes de tableau. */
+.table-suspens thead th { position: sticky; top: 0; z-index: 2; background: var(--th-bg); }
+.barre-filtre { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.champ-filtre {
+    flex: 1 1 320px; max-width: 460px; padding: 7px 11px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--input-bg);
+    color: var(--text); font-family: inherit; font-size: 12.5px; outline: none;
+}
+.champ-filtre:focus { border-color: var(--gold); }
+.compte-filtre { color: var(--text-muted); font-size: 12px; }
+/* Le rang de priorité, lisible sans avoir à lire la colonne. */
+.pastille-priorite {
+    display: inline-block; padding: 2px 9px; border-radius: 20px;
+    font-size: 10.5px; font-weight: 800; letter-spacing: 0.4px; white-space: nowrap;
+}
+.pastille-elevee  { background: rgba(192,0,0,0.20);    color: #d13232; }
+.pastille-moyenne { background: rgba(184,101,27,0.20); color: #d98026; }
+.pastille-faible  { background: rgba(46,107,46,0.18);  color: #4e9a72; }
+.note-lecture-seule { color: var(--gold); font-weight: 600; margin-top: -6px; }
+.bascule-sort {
+    display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+    color: var(--text-muted); font-size: 12px; margin-left: auto;
+}
+/* Repliée par défaut : elle ne se remplit qu'après la régularisation. */
+.col-sort { display: none; }
+.table-suspens.avec-sort .col-sort { display: table-cell; }
+.alerte-fiche {
+    padding: 11px 16px; border-radius: 10px; margin-bottom: 16px;
+    background: rgba(192,0,0,0.14); color: #d13232; font-size: 13px; font-weight: 600;
+}
+/* Déverrouillage : teinte d'avertissement, jamais celle des actions du
+   circuit. Rouvrir un état signé n'est pas une étape ordinaire. */
+.btn-deverrouiller {
+    background: rgba(192,0,0,0.16); color: #d13232;
+    border: 1px solid rgba(192,0,0,0.35);
+}
+.btn-deverrouiller:hover { background: rgba(192,0,0,0.26); }
+#zone-deverrouillage { display: none; }
+#zone-deverrouillage.ouverte { display: flex; }
+.bandeau-deverrouillage {
+    padding: 12px 16px; border-radius: 10px; margin-bottom: 16px;
+    background: rgba(192,0,0,0.10); border: 1px solid rgba(192,0,0,0.28);
+    color: var(--text); font-size: 12.5px; line-height: 1.6;
+}
+.bandeau-deverrouillage strong { color: #d13232; }
+.motif-deverrouillage { color: var(--text-muted); margin-top: 4px; font-style: italic; }
+/* Complétude de la saisie, lue par les deux chefs avant de viser ou valider. */
+.completude {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+}
+.completude-ok { background: rgba(46,107,73,0.16); color: #4e9a72; }
+.completude-partielle { background: rgba(201,162,39,0.16); color: var(--gold); }
+{% endblock %}
+
+{% block content %}
+
+<div class="barre-fiche">
+    {# Le bouton renvoyait toujours vers l'historique, y compris pour une
+       analyse en cours ouverte depuis « À traiter » : l'agent se retrouvait
+       dans la consultation du passé alors qu'il travaillait. Il revient
+       désormais d'où l'on vient. #}
+    {% if onglet_actif == 'a_traiter' %}
+    <a href="/a-traiter" class="btn-retour">{{ t('fiche_retour_traiter') }}</a>
+    {% else %}
+    <a href="/historique" class="btn-retour">{{ t('fiche_retour') }}</a>
+    {% endif %}
+    {% if analyse.rapport %}
+    <a href="/telecharger/{{ analyse.id }}" class="btn-rapport">{{ t('btn_telecharger') }}</a>
+    {% else %}
+    <span class="rapport-absent">{{ t('fiche_rapport_absent') }}</span>
+    {% endif %}
+</div>
+
+{% if erreur == 'droit' %}<div class="alerte-fiche">{{ t('err_droit') }}</div>{% endif %}
+{% if erreur == 'motif' %}<div class="alerte-fiche">{{ t('err_motif') }}</div>{% endif %}
+{% if erreur == 'mdp' %}<div class="alerte-fiche">{{ t('err_mdp_deverrouillage') }}</div>{% endif %}
+
+{% set etat = analyse.etat or 'en_cours' %}
+<div class="bandeau-etat">
+    <span class="etat-detail">{{ t('lbl_etat') }}</span>
+    <span class="pastille pastille-{{ etat }}">{{ t('etat_' + etat) }}</span>
+
+    {% if analyse.vise_par %}
+    <span class="etat-detail">{{ t('msg_visee_par') }} {{ analyse.vise_par }}
+        {% if analyse.date_visa %}({{ analyse.date_visa.strftime('%d/%m/%Y') }}){% endif %}</span>
+    {% endif %}
+    {% if analyse.valide_par %}
+    <span class="etat-detail">{{ t('msg_validee_par') }} {{ analyse.valide_par }}
+        {% if analyse.date_validation %}({{ analyse.date_validation.strftime('%d/%m/%Y') }}){% endif %}</span>
+    {% endif %}
+    {% if analyse.motif_renvoi %}
+    <span class="etat-detail">{{ t('msg_renvoyee') }} : {{ analyse.motif_renvoi }}</span>
+    {% endif %}
+
+    {% if actions.transmettre %}
+    <form method="POST" action="/analyse/{{ analyse.id }}/transmettre" style="margin:0">
+        <button class="btn-circuit btn-viser">{{ t('btn_transmettre') }}</button>
+    </form>
+    {% endif %}
+    {# Ce que les deux chefs doivent voir avant de signer : combien de lignes
+       l'agent a réellement renseignées. Un visa donné sur un état à moitié
+       vide n'engage rien. #}
+    {% if (actions.viser or actions.valider) and completude.total %}
+    <span class="completude {{ 'completude-ok' if completude.part >= 100 else 'completude-partielle' }}">
+        {{ t('lbl_completude') % {'faits': completude.renseignes,
+                                  'total': completude.total,
+                                  'part': completude.part} }}
+    </span>
+    {% endif %}
+    {% if actions.viser %}
+    <form method="POST" action="/analyse/{{ analyse.id }}/viser" style="margin:0">
+        <button class="btn-circuit btn-viser">{{ t('btn_viser') }}</button>
+    </form>
+    {% endif %}
+    {% if actions.valider %}
+    <form method="POST" action="/analyse/{{ analyse.id }}/valider" style="margin:0">
+        <button class="btn-circuit btn-valider">{{ t('btn_valider') }}</button>
+    </form>
+    {% endif %}
+    {% if actions.renvoyer_section or actions.renvoyer %}
+    {# Les boutons ouvrent la zone de motif puis s'effacent : garder les deux
+       visibles pendant la saisie laissait croire qu'il fallait rechoisir. #}
+    <span id="choix-renvoi" class="choix-renvoi">
+        {% if actions.renvoyer_section %}
+        <button type="button" class="btn-circuit btn-renvoyer"
+                onclick="ouvrirRenvoi('section')">{{ t('btn_renvoyer_section') }}</button>
+        {% endif %}
+        {% if actions.renvoyer %}
+        <button type="button" class="btn-circuit btn-renvoyer"
+                onclick="ouvrirRenvoi('agent')">{{ t('btn_renvoyer') }}</button>
+        {% endif %}
+    </span>
+    <form method="POST" class="zone-renvoi" id="zone-renvoi" action="">
+        <span class="destinataire-renvoi" id="destinataire-renvoi"></span>
+        <input type="text" name="motif" placeholder="{{ t('lbl_motif') }}" required>
+        <button class="btn-circuit btn-renvoyer">{{ t('btn_envoyer') }}</button>
+        <button type="button" class="btn-circuit btn-annuler"
+                onclick="fermerRenvoi()">{{ t('btn_annuler') }}</button>
+    </form>
+    {% endif %}
+
+    {% if etat == 'validee' %}
+    <span class="etat-detail">{{ t('msg_verrouillee') }}</span>
+    {% endif %}
+
+    {# Réouverture d'un état validé, réservée à l'administrateur. Le mot de
+       passe est redemandé pour qu'une session laissée ouverte ne suffise pas,
+       et le motif est obligatoire : il restera attaché à l'analyse. #}
+    {% if actions.deverrouiller %}
+    <button type="button" class="btn-circuit btn-deverrouiller" id="btn-deverrouiller"
+            onclick="ouvrirDeverrouillage()">{{ t('btn_deverrouiller') }}</button>
+    <form method="POST" class="zone-renvoi" id="zone-deverrouillage"
+          action="/analyse/{{ analyse.id }}/deverrouiller">
+        <span class="destinataire-renvoi">{{ t('lbl_deverrouiller_avert') }}</span>
+        <input type="text" name="motif" placeholder="{{ t('lbl_motif_deverrouillage') }}" required>
+        <input type="password" name="mot_de_passe" autocomplete="current-password"
+               placeholder="{{ t('lbl_mdp_admin') }}" required>
+        <button class="btn-circuit btn-deverrouiller">{{ t('btn_confirmer_deverrouillage') }}</button>
+        <button type="button" class="btn-circuit btn-annuler"
+                onclick="fermerDeverrouillage()">{{ t('btn_annuler') }}</button>
+    </form>
+    {% endif %}
+</div>
+
+{# La trace du déverrouillage ne s'efface jamais, même après revalidation :
+   sans elle, un état signé pourrait être rouvert, corrigé et revalidé sans
+   que rien n'en témoigne. #}
+{% if analyse.nb_deverrouillages %}
+<div class="bandeau-deverrouillage">
+    <strong>{{ t('msg_deverrouillee_titre') }}</strong>
+    {{ t('msg_deverrouillee_detail') % {
+        'nb': analyse.nb_deverrouillages,
+        'par': analyse.deverrouille_par or '-',
+        'le': analyse.date_deverrouillage.strftime('%d/%m/%Y à %H:%M') if analyse.date_deverrouillage else '-'
+    } }}
+    {% if analyse.motif_deverrouillage %}
+    <div class="motif-deverrouillage">{{ t('lbl_motif') }} : {{ analyse.motif_deverrouillage }}</div>
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="page-title">{{ t('fiche_title') }} : {{ analyse.fichier }}</div>
+<div class="page-subtitle">{{ analyse.date_analyse.strftime('%d/%m/%Y à %H:%M') }}, {{ t('fiche_par') }} {{ analyse.utilisateur_nom }}</div>
+
+<div class="info-grid">
+    <div class="info-carte">
+        <div class="info-valeur">{{ analyse.nb_ecritures|nombre }}</div>
+        <div class="info-label">{{ t('fiche_ecritures') }}</div>
+    </div>
+    <div class="info-carte">
+        <div class="info-valeur">{{ analyse.total|nombre }}</div>
+        <div class="info-label">{{ t('fiche_uniques') }}</div>
+    </div>
+    {# Une carte portait deux nombres séparés par une barre sous un double
+       libellé : « 43 / 0 » sous « Déséquilibres / Extournes ». On ne savait
+       pas lequel allait avec quoi. Un chiffre, un libellé. #}
+    <div class="info-carte">
+        <div class="info-valeur">{{ analyse.doublons|nombre }}</div>
+        <div class="info-label">{{ t('card_doublons_total') }}</div>
+    </div>
+    <div class="info-carte">
+        <div class="info-valeur">{{ analyse.anormaux|nombre }}</div>
+        <div class="info-label">{{ t('card_anormaux') }}</div>
+    </div>
+    <div class="info-carte">
+        <div class="info-valeur">{{ analyse.deseq|nombre }}</div>
+        <div class="info-label">{{ t('card_deseq') }}</div>
+    </div>
+    <div class="info-carte">
+        <div class="info-valeur">{{ analyse.extournes|nombre }}</div>
+        <div class="info-label">{{ t('card_extournes') }}</div>
+    </div>
+</div>
+
+{# Les graphiques manquaient sur la fiche : on ne les voyait qu'au moment de
+   l'analyse. Ils sont reconstruits à partir des données enregistrées. #}
+{% if details.repartition or details.benford %}
+<div class="results-section">
+    <h3>{{ t('fiche_sec_graphes') }}</h3>
+    <div class="graphes-fiche">
+        {% if details.repartition %}<div id="fiche-repartition" style="height:340px;"></div>{% endif %}
+        {% if details.benford %}<div id="fiche-benford" style="height:340px;"></div>{% endif %}
+    </div>
+</div>
+{% endif %}
+
+<div class="results-section">
+    <h3>{{ t('fiche_sec_anormaux') }}</h3>
+    {% if details.anormaux %}
+    <table>
+        <thead>
+            <tr><th>{{ t('th_date') }}</th><th>{{ t('th_journal') }}</th><th>{{ t('th_description') }}</th><th>{{ t('th_montant') }}</th><th>{{ t('th_score') }}</th></tr>
+        </thead>
+        <tbody>
+            {% for a in details.anormaux %}
+            <tr>
+                <td>{{ a.Date }}</td>
+                <td>{{ a.Journal }}</td>
+                <td>{{ a.Description[:60] }}</td>
+                <td>{{ a.Montant|montant }}</td>
+                <td>{{ a.Score_Risque }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="vide">{{ t('fiche_vide_anormaux') }}</p>
+    {% endif %}
+</div>
+
+{# Le plan de travail de la comptable : les écritures non apurées, avec les
+   deux colonnes qu'elle remplit à la main aujourd'hui. #}
+<div class="results-section" id="suspens">
+    <h3>{{ t('fiche_sec_suspens') }}</h3>
+    {% if suspens %}
+    <p class="note-suspens">{{ t('fiche_suspens_info') }}</p>
+    {# Pourquoi les champs peuvent être en lecture seule. Sans cette phrase,
+       un chef qui ouvre une fiche croit à une panne : il voit les colonnes
+       mais ne peut rien y écrire, alors que c'est le circuit qui le veut. #}
+    {% if not actions.annoter %}
+    <p class="note-suspens note-lecture-seule">{{ t('fiche_lecture_seule') }}</p>
+    {% endif %}
+    {# Retrouver une écriture parmi mille sans quitter la page : c'est ce que
+       le filtre d'un tableur permet, et son absence était l'une des raisons
+       de préférer Excel. Le filtre masque des lignes, il n'en supprime aucune,
+       et les champs masqués restent envoyés avec le formulaire. #}
+    <div class="barre-filtre">
+        <input type="search" id="filtre-suspens" class="champ-filtre"
+               placeholder="Filtrer : libellé, journal, montant, nature…"
+               autocomplete="off">
+        <span class="compte-filtre" id="compte-filtre"></span>
+        {# La colonne Sort dit ce qui a été fait de l'écriture : elle ne se
+           remplit qu'une fois la régularisation obtenue, souvent des semaines
+           plus tard. Elle encombrait donc l'écran de saisie quotidienne, d'où
+           la demande de la retirer. Elle est repliée par défaut et reste
+           accessible d'un clic, car la hiérarchie s'en sert. #}
+        <label class="bascule-sort">
+            <input type="checkbox" id="bascule-sort"> {{ t('lbl_afficher_sort') }}
+        </label>
+    </div>
+    <form method="POST" action="/analyse/{{ analyse.id }}/annoter">
+    <table class="table-suspens">
+        <thead>
+            <tr>
+                <th>{{ t('th_priorite') }}</th>
+                <th>{{ t('th_date') }}</th>
+                <th>{{ t('th_journal') }}</th>
+                <th>{{ t('th_description') }}</th>
+                <th>{{ t('th_montant') }}</th>
+                <th>{{ t('th_age') }}</th>
+                <th>{{ t('th_nature') }}</th>
+                <th>{{ t('th_analyse') }}</th>
+                <th class="col-sort">{{ t('th_sort') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in suspens %}
+            {% set a = annotations.get(loop.index0) %}
+            <tr>
+                {# L'ordre du tableau EST la réponse à « par où commencer » :
+                   la pastille rappelle pourquoi cette ligne est en tête. #}
+                <td>
+                    <span class="pastille-priorite pastille-{{ (s.Priorite or 'Faible')|lower|replace('é','e') }}">{{ s.Priorite or '-' }}</span>
+                    {% if s.Motif_priorite %}
+                    <div class="presomption">{{ s.Motif_priorite }}</div>
+                    {% endif %}
+                </td>
+                <td>{{ s.Date }}</td>
+                <td>{{ s.Journal }}</td>
+                <td>{{ s.Description[:40] }}</td>
+                <td>{{ s.Montant|montant }}</td>
+                <td>{% if s.Age >= 365 %}<span class="badge-anormal">{{ s.Age }}</span>{% else %}{{ s.Age }}{% endif %}</td>
+                <td>
+                    {{ s.Nature }}
+                    {% if s.Presomption %}
+                    <div class="presomption">{{ s.Presomption }}</div>
+                    {% endif %}
+                </td>
+                {% if actions.annoter %}
+                {# La proposition est placée en indication, pas en valeur : le
+                   champ reste vide tant que l'agent n'a rien écrit, de sorte
+                   qu'aucune analyse ne puisse être validée sans qu'il l'ait
+                   voulue. Le bouton la recopie s'il la retient. #}
+                {# Une zone de saisie sur deux lignes, et non un champ d'une
+                   ligne : l'agent ecrit une phrase entiere (« Virement recu
+                   sans avis de credit de l'agence de Yaounde »), et le champ
+                   simple la tronquait a l'affichage des qu'elle depassait la
+                   largeur de la colonne. Elle ne voyait plus ce qu'elle avait
+                   ecrit, ni le chef de section avant de viser. #}
+                <td>
+                    <textarea name="analyse_{{ loop.index0 }}" rows="3"
+                              placeholder="{{ s.Analyse_proposee or '' }}"
+                              class="champ-annotation">{{ a.analyse_texte if a and a.analyse_texte else '' }}</textarea>
+                    {% if s.Analyse_proposee %}
+                    <button type="button" class="btn-proposition"
+                            data-proposition="{{ s.Analyse_proposee }}">
+                        {{ t('btn_proposition') }}
+                    </button>
+                    {% endif %}
+                </td>
+                <td class="col-sort"><textarea name="sort_{{ loop.index0 }}" rows="3"
+                           class="champ-annotation">{{ a.sort_texte if a and a.sort_texte else '' }}</textarea></td>
+                {% else %}
+                <td>{{ a.analyse_texte if a and a.analyse_texte else '-' }}</td>
+                <td class="col-sort">{{ a.sort_texte if a and a.sort_texte else '-' }}</td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if actions.annoter %}
+    <button type="submit" class="btn-circuit btn-valider btn-enregistrer">{{ t('btn_enregistrer_annotations') }}</button>
+    {% endif %}
+    </form>
+    {% else %}
+    <p class="vide">{{ t('fiche_vide_remontee') }}</p>
+    {% endif %}
+</div>
+
+{# Les déséquilibres avaient un compteur mais aucun détail : on ne pouvait pas
+   savoir de quelles écritures il s'agissait. #}
+<div class="results-section">
+    <h3>{{ t('sec_deseq') }}</h3>
+    {% if details.deseq %}
+    <table>
+        <thead>
+            <tr>
+                <th>{{ t('th_date') }}</th>
+                <th>{{ t('th_journal') }}</th>
+                <th>{{ t('th_sequence') }}</th>
+                <th>{{ t('th_description') }}</th>
+                <th>{{ t('th_montant') }}</th>
+                <th>{{ t('th_sens') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in details.deseq %}
+            <tr>
+                <td>{{ d.Date }}</td>
+                <td>{{ d.Journal }}</td>
+                <td>{{ d.Sequence }}</td>
+                <td>{{ d.Description[:45] }}</td>
+                <td>{{ d.Montant|montant }}</td>
+                <td>{{ d.Sens }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="vide">{{ t('fiche_vide_deseq') }}</p>
+    {% endif %}
+</div>
+
+<div class="results-section">
+    <h3>{{ t('fiche_sec_doublons') }}</h3>
+    {% if details.doublons %}
+    <table>
+        <thead>
+            <tr><th>{{ t('th_date') }}</th><th>{{ t('th_journal') }}</th><th>{{ t('th_description') }}</th><th>{{ t('th_montant') }}</th><th>{{ t('th_sens') }}</th><th>{{ t('th_occurrences') }}</th></tr>
+        </thead>
+        <tbody>
+            {% for d in details.doublons %}
+            <tr>
+                <td>{{ d.Date }}</td>
+                <td>{{ d.Journal }}</td>
+                <td>{{ d.Description[:45] }}</td>
+                <td>{{ d.Montant|montant }}</td>
+                <td>{{ d.Sens }}</td>
+                <td>{{ d.Occurrences }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="vide">{{ t('fiche_vide_doublons') }}</p>
+    {% endif %}
+</div>
+
+<div class="results-section">
+    <h3>{{ t('fiche_sec_extournes') }}</h3>
+    {% if details.extournes %}
+    <table>
+        <thead>
+            <tr><th>{{ t('th_date1') }}</th><th>{{ t('th_date2') }}</th><th>{{ t('th_journal') }}</th><th>{{ t('th_desc1') }}</th><th>{{ t('th_desc2') }}</th><th>{{ t('th_montant') }}</th></tr>
+        </thead>
+        <tbody>
+            {% for e in details.extournes %}
+            <tr>
+                <td>{{ e['Date 1'] }}</td>
+                <td>{{ e['Date 2'] }}</td>
+                <td>{{ e.Journal }}</td>
+                <td>{{ e['Description 1'][:40] }}</td>
+                <td>{{ e['Description 2'][:40] }}</td>
+                <td>{{ e.Montant|montant }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="vide">{{ t('fiche_vide_extournes') }}</p>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_script %}
+<script>
+// Renvoi motivé et déverrouillage : les boutons du bandeau appelaient
+// ouvrirRenvoi() et fermerRenvoi(), qui n'étaient définies nulle part. Le
+// renvoi était donc inopérant depuis l'écran, un chef qui cliquait
+// « Renvoyer » ne déclenchait rien. Constaté et corrigé le 2026-08-28.
+function ouvrirRenvoi(destinataire) {
+    var zone = document.getElementById('zone-renvoi');
+    var choix = document.getElementById('choix-renvoi');
+    var libelle = document.getElementById('destinataire-renvoi');
+    if (!zone) { return; }
+    // Deux destinataires, deux routes : l'agent reprend tout son travail, le
+    // chef de section perd seulement son visa.
+    zone.action = {{ analyse.id }} && (destinataire === 'section'
+        ? '/analyse/{{ analyse.id }}/renvoyer_section'
+        : '/analyse/{{ analyse.id }}/renvoyer');
+    if (libelle) {
+        libelle.textContent = destinataire === 'section'
+            ? {{ t('btn_renvoyer_section')|tojson }}
+            : {{ t('btn_renvoyer')|tojson }};
+    }
+    if (choix) { choix.style.display = 'none'; }
+    zone.classList.add('ouverte');
+    var champ = zone.querySelector('input[name="motif"]');
+    if (champ) { champ.focus(); }
+}
+
+function fermerRenvoi() {
+    var zone = document.getElementById('zone-renvoi');
+    var choix = document.getElementById('choix-renvoi');
+    if (zone) { zone.classList.remove('ouverte'); }
+    if (choix) { choix.style.display = ''; }
+}
+
+function ouvrirDeverrouillage() {
+    var zone = document.getElementById('zone-deverrouillage');
+    var bouton = document.getElementById('btn-deverrouiller');
+    if (!zone) { return; }
+    if (bouton) { bouton.style.display = 'none'; }
+    zone.classList.add('ouverte');
+    var champ = zone.querySelector('input[name="motif"]');
+    if (champ) { champ.focus(); }
+}
+
+function fermerDeverrouillage() {
+    var zone = document.getElementById('zone-deverrouillage');
+    var bouton = document.getElementById('btn-deverrouiller');
+    if (zone) {
+        zone.classList.remove('ouverte');
+        // Le mot de passe ne reste jamais dans un champ refermé.
+        zone.querySelectorAll('input').forEach(function (c) { c.value = ''; });
+    }
+    if (bouton) { bouton.style.display = ''; }
+}
+
+// Confort de saisie sur le tableau des suspens.
+//
+// La comptable disait travailler dans Excel parce que « dans l'application on
+// ne peut pas vraiment se mouvoir, c'est un peu restreint ». Or ce qu'elle
+// saisit dans un fichier téléchargé ne remonte jamais au chef de section : son
+// travail s'y perd. Plutôt que de lui demander de renoncer à Excel, on rend la
+// saisie dans l'application aussi directe : Entrée descend d'une ligne, Tab
+// passe à la colonne suivante, et un collage depuis un tableur remplit toute
+// la colonne d'un coup.
+(function () {
+    var table = document.querySelector('.table-suspens');
+    if (!table) { return; }
+
+    function champs(colonne) {
+        return Array.prototype.slice.call(
+            table.querySelectorAll('input[name^="' + colonne + '_"]'));
+    }
+    function colonneDe(champ) {
+        return champ.name.indexOf('analyse_') === 0 ? 'analyse' : 'sort';
+    }
+
+    table.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' || e.target.tagName !== 'INPUT') { return; }
+        // Sans cela, Entrée envoie le formulaire au premier champ rempli.
+        e.preventDefault();
+        var liste = champs(colonneDe(e.target));
+        var suivant = liste[liste.indexOf(e.target) + (e.shiftKey ? -1 : 1)];
+        if (suivant) { suivant.focus(); suivant.select(); }
+    });
+
+    table.addEventListener('paste', function (e) {
+        if (e.target.tagName !== 'INPUT') { return; }
+        var texte = (e.clipboardData || window.clipboardData).getData('text');
+        var lignes = texte.replace(/\r/g, '').split('\n');
+        // Un collage d'une seule valeur garde le comportement normal.
+        if (lignes.length < 2) { return; }
+        e.preventDefault();
+        var liste = champs(colonneDe(e.target));
+        var depart = liste.indexOf(e.target);
+        lignes.forEach(function (valeur, rang) {
+            var champ = liste[depart + rang];
+            // Une colonne collée depuis Excel peut contenir des tabulations :
+            // on ne retient que la première cellule de chaque ligne.
+            if (champ) { champ.value = valeur.split('\t')[0].trim(); }
+        });
+    });
+
+    // Reprise d'une proposition d'analyse, sur demande explicite de l'agent.
+    table.addEventListener('click', function (e) {
+        var bouton = e.target.closest('.btn-proposition');
+        if (!bouton) { return; }
+        var champ = bouton.parentNode.querySelector('input');
+        if (champ) { champ.value = bouton.dataset.proposition; champ.focus(); }
+    });
+
+    // Filtre. Les lignes sont masquées, jamais retirées : les champs de saisie
+    // d'une ligne masquée restent dans le formulaire et sont enregistrés
+    // normalement. Filtrer ne doit jamais faire perdre une annotation.
+    // Colonne Sort repliée par défaut, et le choix est retenu d'une visite à
+    // l'autre : celui qui s'en sert ne doit pas la redéployer chaque fois.
+    var bascule = document.getElementById('bascule-sort');
+    if (bascule) {
+        var memoriser = function (visible) {
+            try { localStorage.setItem('sidac_colonne_sort', visible ? '1' : '0'); }
+            catch (e) { /* navigation privée : le choix vaut pour la session */ }
+        };
+        var appliquer = function (visible) {
+            table.classList.toggle('avec-sort', visible);
+            bascule.checked = visible;
+        };
+        var retenu = null;
+        try { retenu = localStorage.getItem('sidac_colonne_sort'); } catch (e) {}
+        appliquer(retenu === '1');
+        bascule.addEventListener('change', function () {
+            appliquer(bascule.checked);
+            memoriser(bascule.checked);
+        });
+    }
+
+    var filtre = document.getElementById('filtre-suspens');
+    var compteur = document.getElementById('compte-filtre');
+    if (filtre) {
+        var lignes = Array.prototype.slice.call(table.querySelectorAll('tbody tr'));
+        var textes = lignes.map(function (tr) {
+            return (tr.textContent || '').toLowerCase().replace(/\s+/g, ' ');
+        });
+        var afficher = function () {
+            var q = filtre.value.trim().toLowerCase();
+            var vus = 0;
+            lignes.forEach(function (tr, i) {
+                var visible = !q || textes[i].indexOf(q) !== -1;
+                tr.hidden = !visible;
+                if (visible) { vus += 1; }
+            });
+            compteur.textContent = q
+                ? vus + ' ligne' + (vus > 1 ? 's' : '') + ' sur ' + lignes.length
+                : lignes.length + ' ligne' + (lignes.length > 1 ? 's' : '');
+        };
+        filtre.addEventListener('input', afficher);
+        afficher();
+    }
+})();
+</script>
+{% if details.repartition or details.benford %}
+{# Servi localement : voir la note du meme bloc dans dashboard.html. #}
+<script src="{{ url_for('static', filename='plotly.min.js') }}"></script>
+<script>
+function tracerGraphesFiche() {
+    const c = sidacChartColors();
+
+    {% if details.repartition %}
+    {% set r = details.repartition %}
+    Plotly.newPlot('fiche-repartition', [{
+        type: 'pie',
+        {# Quatre parts qui s'excluent : leur somme fait exactement le nombre
+           d'écritures du fichier, donc le camembert ne peut pas contredire les
+           compteurs affichés au-dessus. Les paiements en attente manquaient
+           ici : le graphique laissait alors 5 écritures hors de son total. #}
+        {% set parts = [
+            (t('graph_apurees'),  r.apurees or 0,  '#70AD47'),
+            (t('card_remontee'),  r.remontee or 0, '#B8651B'),
+            (t('card_attente'),   r.attente or 0,  '#4E8A6B'),
+            (t('card_doublons'),  r.doublons or 0, '#C9A227')
+        ] %}
+        labels: [{% for p in parts if p[1] %}'{{ p[0] }}',{% endfor %}],
+        values: [{% for p in parts if p[1] %}{{ p[1] }},{% endfor %}],
+        marker: { colors: [{% for p in parts if p[1] %}'{{ p[2] }}',{% endfor %}] },
+        {# Une decimale et la virgule francaise, comme sur le tableau de bord :
+           « 8.87% » n'est pas une ecriture acceptable sur un etat de la BEAC. #}
+        texttemplate: '%{percent:.1%}', sort: false, hole: 0.35,
+        hovertemplate: '%{label} : %{value}<extra></extra>'
+    }], {
+        title: { text: '{{ t("graph_repartition") }}', font: { color: '#E8C547', size: 15 } },
+        paper_bgcolor: c.paper, plot_bgcolor: c.plot,
+        font: { color: c.font, size: 13 },
+        separators: ', ',   // virgule decimale, espace pour les milliers
+        margin: { t: 50, b: 20, l: 20, r: 20 }
+    }, {responsive: true});
+    {% endif %}
+
+    {% if details.benford %}
+    const chiffres = ['1','2','3','4','5','6','7','8','9'];
+    const observe = {{ details.benford.observe | tojson | safe }};
+    const theorique = {{ details.benford.theorique | tojson | safe }};
+    Plotly.newPlot('fiche-benford', [
+        { type: 'bar', name: '{{ t("graph_observe") }}', x: chiffres,
+          y: chiffres.map(d => observe[d]), marker: { color: '#C9A227' } },
+        { type: 'scatter', mode: 'lines+markers', name: '{{ t("graph_theorique") }}',
+          x: chiffres, y: chiffres.map(d => theorique[d]),
+          line: { color: '#C00000', width: 3 } }
+    ], {
+        title: { text: '{{ t("sec_benford") }}', font: { color: '#E8C547', size: 15 } },
+        paper_bgcolor: c.paper, plot_bgcolor: c.plot,
+        font: { color: c.font, size: 13 },
+        separators: ', ',   // virgule decimale, espace pour les milliers
+        xaxis: { title: { text: '{{ t("graph_premier_chiffre") }}' }, tickfont: { size: 12 } },
+        yaxis: { title: { text: '%' }, gridcolor: c.grid, tickfont: { size: 12 } },
+        margin: { t: 50, b: 50, l: 45, r: 20 }
+    }, {responsive: true});
+    {% endif %}
+}
+window.sidacRedrawCharts = tracerGraphesFiche;
+document.addEventListener('DOMContentLoaded', tracerGraphesFiche);
+</script>
+{% endif %}
+{% endblock %}

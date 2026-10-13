@@ -1,0 +1,847 @@
+{% extends "base.html" %}
+{% block title %}{{ t('dash_title') }} - SIDAC | BEAC{% endblock %}
+
+{% block extra_style %}
+.bloc-deja {
+    background: var(--surface); border: 1px solid var(--gold);
+    border-left: 4px solid var(--gold);
+    border-radius: 12px; padding: 18px 22px; margin-bottom: 22px;
+}
+.deja-titre { color: var(--gold); font-size: 15px; font-weight: 800; margin-bottom: 8px; }
+.deja-corps { color: var(--text); font-size: 14px; margin: 0 0 8px; }
+.deja-info { color: var(--text-muted); font-size: 12.5px; margin: 0 0 14px; }
+.deja-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.deja-form { margin: 0; }
+.deja-btn {
+    display: inline-block; padding: 9px 18px; border-radius: 10px;
+    border: 1px solid var(--border); background: transparent; color: var(--text);
+    font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer;
+}
+.deja-btn:hover { border-color: var(--gold); color: var(--gold); }
+.deja-btn-plein { background: var(--gold); border-color: var(--gold); color: #10141c; font-weight: 700; }
+
+.accueil-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+    margin-bottom: 25px;
+}
+.stat-carte {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 20px;
+    display: flex; align-items: center; gap: 14px;
+    text-align: left;
+}
+.stat-texte { min-width: 0; }
+.stat-valeur { color: var(--text); font-size: 21px; font-weight: 800; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat-label { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+.stat-icone {
+    width: 40px; height: 40px; flex-shrink: 0;
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, rgba(201,162,39,0.16), rgba(31,78,121,0.16));
+}
+.stat-icone svg { width: 20px; height: 20px; stroke: var(--gold); }
+
+.guide {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px 30px;
+    margin-bottom: 25px;
+    display: flex;
+    justify-content: space-around;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+.guide-etape { display: flex; align-items: center; gap: 14px; }
+.guide-num {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, #C9A227, #E8C547);
+    color: #10141c;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 16px;
+    flex-shrink: 0;
+}
+.guide-texte { color: var(--text-muted); font-size: 13px; line-height: 1.5; max-width: 220px; }
+
+.upload-zone {
+    background: var(--surface);
+    border: 2px dashed rgba(201,162,39,0.35);
+    border-radius: 14px;
+    padding: 34px;
+    text-align: center;
+    margin-bottom: 25px;
+}
+.upload-zone h3 { color: var(--gold); font-size: 16px; margin-bottom: 18px; font-weight: 700; }
+.upload-buttons { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+
+.btn-upload, .btn-analyse, .btn-rapport, .btn-nouveau, .btn-renseigner {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 26px;
+    border: none; border-radius: 10px;
+    font-size: 14px; font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s;
+    text-decoration: none;
+}
+.btn-upload { background: linear-gradient(135deg, #C9A227, #E8C547); color: #10141c; }
+.btn-upload:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(201,162,39,0.4); }
+.btn-analyse { background: #1F4E79; color: white; }
+.btn-analyse:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(31,78,121,0.5); }
+.btn-analyse:disabled { cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-rapport { background: #2C5F2E; color: white; }
+.btn-rapport:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(44,95,46,0.5); }
+.btn-nouveau { background: transparent; color: var(--gold); border: 1px solid var(--gold); }
+.btn-nouveau:hover { background: rgba(201,162,39,0.12); }
+/* L'action attendue après une analyse : elle prime visuellement sur le
+   téléchargement du rapport, qui ne vient qu'à la fin du circuit. */
+.btn-renseigner { background: linear-gradient(135deg, #C9A227, #E8C547); color: #10141c; text-decoration: none; }
+.btn-renseigner:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(201,162,39,0.4); }
+
+.fichier-info { color: var(--gold); font-size: 13px; margin-top: 12px; }
+
+.progress-bar { width: 100%; height: 6px; background: rgba(128,128,128,0.25); border-radius: 3px; margin-top: 15px; display: none; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #C9A227, #E8C547); border-radius: 3px; width: 0%; transition: width 0.3s; }
+
+.cartes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-bottom: 25px; }
+.carte { border-radius: 14px; padding: 20px; text-align: center; }
+.carte-titre { font-size: 11px; font-weight: 700; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1.2px; opacity: 0.85; }
+.carte-valeur { font-size: 36px; font-weight: 900; }
+/* Les contrôles complémentaires ne sont pas quatre alertes de rang égal :
+   quatre aplats saturés côte à côte, moutarde, rouge, bleu et violet, faisaient
+   crier la page. Ils partagent désormais un fond sobre, et seule la valeur
+   porte une teinte, celle de leur nature dans le rapport Excel. La hiérarchie
+   visuelle revient ainsi au total des suspens, qui est le chiffre du métier. */
+.carte-doublons { background: linear-gradient(145deg, #C9A227, #a8871f); color: #10141c; }
+.carte-remontee { background: linear-gradient(145deg, #B8651B, #8f4d13); color: white; }
+/* --card-bg n'est definie nulle part : seul le repli s'appliquait, donc un
+   voile blanc qui ne suivait aucun des deux themes. --surface suit le theme
+   et vaut exactement le fond des autres blocs. */
+.cartes-complements .carte {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+.cartes-complements .carte-titre { opacity: 0.72; }
+.cartes-complements .carte-doublons  .carte-valeur { color: #C9A227; }
+.cartes-complements .carte-anormaux  .carte-valeur { color: #C0504D; }
+.cartes-complements .carte-deseq     .carte-valeur { color: #5B9BD5; }
+.cartes-complements .carte-extourne  .carte-valeur { color: #A87CA0; }
+.carte-total-suspens { background: linear-gradient(145deg, #1F4E79, #16385a); color: white; box-shadow: inset 0 0 0 2px rgba(201,162,39,0.55); }
+.carte-anormaux { background: linear-gradient(145deg, #8B0000, #6d0000); color: white; }
+.carte-deseq { background: linear-gradient(145deg, #1A3A5C, #142d48); color: white; }
+.carte-extourne { background: linear-gradient(145deg, #5C1A5C, #471447); color: white; }
+
+/* Les suspens dominent l'écran, les compléments sont visuellement en retrait. */
+.bloc-titre { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.4px; margin: 6px 0 12px; color: var(--texte); }
+.bloc-titre-secondaire { opacity: 0.62; font-size: 12px; margin-top: 4px; }
+.cartes-complements .carte { padding: 14px; opacity: 0.88; }
+.cartes-complements .carte-valeur { font-size: 26px; }
+.carte-suspens-large { margin-bottom: 25px; padding: 26px 22px; }
+.carte-suspens-large .carte-valeur { font-size: 52px; line-height: 1.05; }
+.composition-suspens {
+    margin-top: 12px; font-size: 13px; font-weight: 600;
+    opacity: 0.9; letter-spacing: 0.2px;
+}
+
+.badge-anormal { background: rgba(139,0,0,0.35); color: #d13232; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.score-bar-container { width: 100px; background: rgba(128,128,128,0.25); border-radius: 4px; height: 10px; display: inline-block; vertical-align: middle; margin-right: 6px; }
+.score-bar { height: 10px; border-radius: 4px; }
+
+.note-apercu { color: var(--text-muted); font-size: 12.5px; margin: -6px 0 12px; }
+
+/* Avertissement de structure : il précède les compteurs et doit se lire avant
+   eux, sans pour autant crier — ce n'est pas une erreur, c'est une mise en
+   garde sur la nature du compte soumis. */
+.alerte-structure {
+    border: 1px solid rgba(201,162,39,0.55);
+    border-left: 4px solid #C9A227;
+    background: rgba(201,162,39,0.10);
+    border-radius: 10px; padding: 16px 18px; margin-bottom: 22px;
+}
+.alerte-structure-titre {
+    font-weight: 800; font-size: 13px; text-transform: uppercase;
+    letter-spacing: 1px; color: #C9A227; margin-bottom: 8px;
+}
+.alerte-structure p { margin: 0; font-size: 13.5px; line-height: 1.6; }
+.note-delai { opacity: 0.7; font-size: 12px; margin-top: 8px; font-weight: 500; }
+.note-desequilibre { margin: -14px 0 24px; line-height: 1.6; max-width: 78ch; }
+/* La présomption est une justification, pas une donnée : elle se lit en
+   retrait pour ne pas concurrencer les colonnes chiffrées. */
+.presomption { color: var(--text-muted); font-size: 12px; font-style: italic; }
+.status-bar { color: var(--gold); font-size: 13px; text-align: center; padding: 12px; }
+
+.graphes-flex { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+.graphe-box { width: 45%; min-width: 300px; flex-grow: 1; }
+{% endblock %}
+
+{% block content %}
+
+<div class="page-title">{{ t('dash_title') }}</div>
+<div class="page-subtitle">{{ t('dash_subtitle') }}</div>
+
+{% if erreur %}
+<div id="erreur-serveur" style="background: rgba(139,0,0,0.25); border: 1px solid #C00000; color: #d13232;
+            padding: 14px 20px; border-radius: 10px; margin-bottom: 20px;
+            font-size: 14px; font-weight: 600;">
+    {{ erreur }}
+</div>
+{% endif %}
+
+{% if deja_analyse %}
+<div class="bloc-deja">
+    <div class="deja-titre">{{ t('deja_titre') }}</div>
+    <p class="deja-corps">
+        {{ t('deja_texte') }} {{ deja_analyse.date_analyse.strftime('%d/%m/%Y à %H:%M') }}
+        {{ t('deja_par') }} {{ deja_analyse.utilisateur_nom }}
+        ({{ deja_analyse.fichier }}).
+    </p>
+    <p class="deja-info">{{ t('deja_info') }}</p>
+    <div class="deja-actions">
+        <a href="/fiche/{{ deja_analyse.id }}" class="deja-btn deja-btn-plein">{{ t('deja_voir') }}</a>
+{# La relance repart de l'export déjà déposé, mémorisé côté serveur : il n'y a
+   plus de sélecteur de fichier à rouvrir. Elle est ouverte à tous les profils,
+   la trace au journal d'audit permettant de savoir qui a relancé quoi. #}
+        <form action="/analyser" method="post" class="deja-form">
+            <input type="hidden" name="forcer" value="1">
+            <button type="submit" class="deja-btn">{{ t('deja_forcer') }}</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% if not resultats %}
+<div class="accueil-grid">
+    <div class="stat-carte">
+        <div class="stat-icone">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+        <div class="stat-texte">
+            <div class="stat-valeur">{{ stats.nb_analyses if stats else 0 }}</div>
+            <div class="stat-label">{{ t('dash_stat_analyses') }}</div>
+        </div>
+    </div>
+    <div class="stat-carte">
+        <div class="stat-icone">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="stat-texte">
+            <div class="stat-valeur">{{ stats.derniere_date if stats and stats.derniere_date else '-' }}</div>
+            <div class="stat-label">{{ t('dash_stat_derniere') }}</div>
+        </div>
+    </div>
+    <div class="stat-carte">
+        <div class="stat-icone">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div class="stat-texte">
+            <div class="stat-valeur">{{ stats.derniere_total if stats and stats.derniere_total is not none else '-' }}</div>
+            <div class="stat-label">{{ t('dash_stat_anomalies') }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="guide">
+    <div class="guide-etape">
+        <div class="guide-num">1</div>
+        <div class="guide-texte">{{ t('dash_guide1') }}</div>
+    </div>
+    <div class="guide-etape">
+        <div class="guide-num">2</div>
+        <div class="guide-texte">{{ t('dash_guide2') }}</div>
+    </div>
+    <div class="guide-etape">
+        <div class="guide-num">3</div>
+        <div class="guide-texte">{{ t('dash_guide3') }}</div>
+    </div>
+</div>
+{% endif %}
+
+<div class="upload-zone">
+    <h3>{{ t('dash_upload_h3') }}</h3>
+    <form method="POST" action="/analyser" enctype="multipart/form-data" id="form-analyse">
+        <div class="upload-buttons">
+            <label class="btn-upload" for="fichier">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10141c" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                {{ t('dash_btn_choisir') }}
+            </label>
+            <input type="file" id="fichier" name="fichier" accept=".xlsx,.xls" multiple style="display:none" onchange="afficherFichier(this)">
+            <button type="submit" class="btn-analyse" onclick="return lancerAnalyse(event)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                {{ t('dash_btn_analyser') }}
+            </button>
+            {% if resultats %}
+            {# Après une analyse, l'action suivante est de renseigner les
+               suspens. Elle passait par l'historique, qui sert à regarder le
+               passé : le chemin normal du travail y devenait un détour. #}
+            {% if session.get('last_analyse_id') %}
+            <a href="/fiche/{{ session['last_analyse_id'] }}#suspens" class="btn-renseigner">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                {{ t('btn_renseigner') }}
+            </a>
+            {% endif %}
+            <a href="/telecharger" class="btn-rapport">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                {{ t('dash_btn_rapport') }}
+            </a>
+            <a href="/dashboard?nouveau=1" class="btn-nouveau">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                {{ t('dash_btn_nouvelle') }}
+            </a>
+            {% endif %}
+        </div>
+    </form>
+    <p class="fichier-info" id="fichier-info">
+        {% if fichier_nom %}{{ t('dash_fichier') }} : {{ fichier_nom }}{% else %}{{ t('dash_aucun_fichier') }}{% endif %}
+    </p>
+    <div class="progress-bar" id="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+    </div>
+</div>
+
+{% if resultats %}
+{# Le contrôle de structure passe AVANT tout compteur. Sur un compte qui ne
+   s'apure pas une écriture contre une, annoncer le résidu comme un nombre de
+   suspens est faux : c'est ce qui a fait rire la comptable en réunion, et à
+   juste titre. #}
+{% if resultats.structure_alerte %}
+{% set s = resultats.structure_alerte %}
+{# « 16.2 % » s'ecrivait avec le point decimal anglais, au milieu d'une alerte
+   ou tous les autres nombres sont deja a la francaise. Le francais et
+   l'espagnol prennent la virgule, l'anglais garde le point : c'est sa
+   convention. Le calcul est pose ici et non dans l'expression du dessous : un
+   commentaire Jinja ne peut pas figurer a l'interieur d'un {{ }}. #}
+{% set part_lisible = s.part_plafond if lang == 'en'
+   else (s.part_plafond|string)|replace('.', ',') %}
+<div class="alerte-structure">
+    <div class="alerte-structure-titre">{{ t('alerte_structure_titre') }}</div>
+    <p>{{ t('alerte_structure_texte') % {
+        'credits': '{:,}'.format(s.nb_dominant)|replace(',', ' '),
+        'rares': '{:,}'.format(s.nb_rares)|replace(',', ' '),
+        'dominant': s.dominant,
+        'rare_libelle': s.rare_libelle,
+        'plafond': '{:,}'.format(s.plafond)|replace(',', ' '),
+        'part': part_lisible } }}</p>
+</div>
+{% endif %}
+
+{# Les trois causes reconnues par le service comptable : elles seules
+   composent le total et occupent le haut de l'écran. #}
+{# Un seul grand chiffre, et sa composition en dessous en petit. Trois
+   cartes de même taille dont deux portaient le même nombre ne pouvaient
+   qu'embrouiller : on ne voyait plus lequel était le total. #}
+{# Le titre de bloc et celui de la carte disaient la même chose l'un sous
+   l'autre. Seule la carte le porte désormais. #}
+<div class="carte carte-total-suspens carte-suspens-large">
+    <div class="carte-titre">{{ t('card_total_suspens') }}</div>
+    <div class="carte-valeur">{{ resultats.total|nombre }}</div>
+    <div class="composition-suspens">
+        {{ resultats.remontee|nombre }} {{ t('lbl_dont_remontee') }}
+        &nbsp;&middot;&nbsp;
+        {{ (resultats.attente or 0)|nombre }} {{ t('lbl_dont_attente') }}
+        &nbsp;&middot;&nbsp;
+        {{ resultats.doublons_non_apures|nombre }} {{ t('lbl_dont_doublons') }}
+        &nbsp;&middot;&nbsp;
+        {{ resultats.apurees|nombre }} {{ t('lbl_dont_apurees') }}
+    </div>
+    {# Ce n'est pas une ancienneté mais le délai au-delà duquel une écriture
+       cesse d'être un paiement en attente pour devenir un souci de non remontée.
+       Le libellé « Ancienneté (jours) : 3 j » disait autre chose, et se
+       répétait. #}
+    {% if resultats.delai_seuil %}
+    <div class="composition-suspens note-delai">
+        {{ t('lbl_frontiere_delai') % resultats.delai_seuil }}
+        &nbsp;&middot;&nbsp;
+        {{ t('delai_mesure') if resultats.delai_mesure else t('delai_defaut') }}
+    </div>
+    {% endif %}
+</div>
+
+{# Pourquoi ces écritures sont des déséquilibres, et pourquoi le doublon n'en
+   est pas un : la distinction vient du service comptable et n'était nulle part
+   expliquée, ce qui laissait croire à deux contrôles indépendants. #}
+<p class="note-apercu note-desequilibre">{{ t('note_desequilibre') }}</p>
+
+{# La liste se corrige d'elle-même : un suspens signalé lors d'un arrêté
+   précédent dont la contrepartie arrive dans celui-ci se referme, sans qu'il
+   faille recharger l'ancien export. #}
+{% if resultats.tableau_anciens_apures %}
+<div class="results-section bloc-apures">
+    <h3>{{ t('sec_anciens_apures') }}</h3>
+    <p class="note-apercu">{{ t('note_anciens_apures') % resultats.anciens_apures }}</p>
+    <table>
+        <thead>
+            <tr>
+                <th>{{ t('th_date') }}</th>
+                <th>{{ t('th_description') }}</th>
+                <th>{{ t('th_montant') }}</th>
+                <th>{{ t('th_sens') }}</th>
+                <th>{{ t('th_nature') }}</th>
+                <th>{{ t('th_signale_le') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in resultats.tableau_anciens_apures %}
+            <tr>
+                <td>{{ row.Date }}</td>
+                <td>{{ row.Description[:45] }}</td>
+                <td>{{ row.Montant|montant }}</td>
+                <td>{{ row.Sens }}</td>
+                <td>{{ row.Nature }}</td>
+                <td class="presomption">{{ row.Signale_le }} (analyse n° {{ row.Analyse_origine }})</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{# Contrôles complémentaires : utiles, mais hors du total des suspens. #}
+<h3 class="bloc-titre bloc-titre-secondaire">{{ t('sec_complements') }}</h3>
+<div class="cartes-grid cartes-complements">
+    <div class="carte carte-doublons">
+        <div class="carte-titre">{{ t('card_doublons_total') }}</div>
+        <div class="carte-valeur">{{ resultats.doublons|nombre }}</div>
+    </div>
+    <div class="carte carte-anormaux">
+        <div class="carte-titre">{{ t('card_anormaux') }}</div>
+        <div class="carte-valeur">{{ resultats.anormaux|nombre }}</div>
+    </div>
+    <div class="carte carte-deseq">
+        <div class="carte-titre">{{ t('card_deseq') }}</div>
+        <div class="carte-valeur">{{ resultats.deseq|nombre }}</div>
+    </div>
+    <div class="carte carte-extourne">
+        <div class="carte-titre">{{ t('card_extournes') }}</div>
+        <div class="carte-valeur">{{ resultats.extournes|nombre }}</div>
+    </div>
+</div>
+
+{% if resultats.tableau_anormaux %}
+<div class="results-section">
+    <h3>{{ t('sec_anormaux') }}</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>{{ t('th_date') }}</th>
+                <th>{{ t('th_journal') }}</th>
+                <th>{{ t('th_description') }}</th>
+                <th>{{ t('th_montant') }}</th>
+                <th>{{ t('th_score') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in resultats.tableau_anormaux %}
+            <tr>
+                <td>{{ row.Date }}</td>
+                <td>{{ row.Journal }}</td>
+                <td>{{ row.Description[:50] }}...</td>
+                <td>{{ row.Montant|montant }}</td>
+                <td>
+                    <div class="score-bar-container">
+                        <div class="score-bar" style="width:{{ row.Score_Risque }}%; background: {% if row.Score_Risque > 75 %}#C00000{% elif row.Score_Risque > 50 %}#FF8C00{% else %}#FFC000{% endif %};"></div>
+                    </div>
+                    {{ row.Score_Risque }}%
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{# Les deux familles d'écritures sans contrepartie se lisent séparément : le
+   paiement en attente est normal et se dénoue seul, le souci de non remontée
+   appelle une relance. Les confondre était l'erreur relevée en réunion. #}
+{% macro table_suspens(lignes, total, titre) %}
+<div class="results-section">
+    <h3>{{ titre }}</h3>
+    {# Le tableau n'est qu'un aperçu : sans le dire, on laissait croire que
+       l'écran montrait la totalité. #}
+    <p class="note-apercu">{{ lignes|length }} {{ t('lbl_apercu_sur') }} {{ total|nombre }} {{ t('lbl_apercu_fin') }}</p>
+    <table>
+        <thead>
+            <tr>
+                <th>{{ t('th_date') }}</th>
+                <th>{{ t('th_journal') }}</th>
+                <th>{{ t('th_description') }}</th>
+                <th>{{ t('th_montant') }}</th>
+                <th>{{ t('th_sens') }}</th>
+                <th>{{ t('th_age') }}</th>
+                <th>{{ t('th_presomption') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in lignes %}
+            <tr>
+                <td>{{ row.Date }}</td>
+                <td>{{ row.Journal }}</td>
+                <td>{{ row.Description[:45] }}</td>
+                <td>{{ row.Montant|montant }}</td>
+                <td>{{ row.Sens }}</td>
+                <td>{% if row.Age >= 365 %}<span class="badge-anormal">{{ row.Age }}</span>{% else %}{{ row.Age }}{% endif %}</td>
+                <td class="presomption">{{ row.Presomption or '' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endmacro %}
+
+{% if resultats.tableau_remontee %}
+{{ table_suspens(resultats.tableau_remontee, resultats.remontee, t('sec_remontee')) }}
+{% endif %}
+
+{% if resultats.tableau_attente %}
+{{ table_suspens(resultats.tableau_attente, resultats.attente, t('sec_attente')) }}
+{% endif %}
+
+{% if resultats.tableau_doublons %}
+<div class="results-section">
+    <h3>{{ t('sec_doublons') }}</h3>
+    <p class="note-apercu">{{ resultats.tableau_doublons|length }} {{ t('lbl_apercu_sur') }} {{ resultats.doublons|nombre }} {{ t('lbl_apercu_fin') }}</p>
+    {# Sans cette ligne, analyser janvier puis février comptait deux fois le
+       même doublon. L'application confronte désormais chaque opération aux
+       arrêtés précédents, sans qu'il faille recharger les mois ensemble. #}
+    {% if resultats.doublons_deja_vus %}
+    <p class="note-apercu note-deja-vu">{{ t('note_doublons_deja_vus') % resultats.doublons_deja_vus }}</p>
+    {% endif %}
+    <table>
+        <thead>
+            <tr>
+                <th>{{ t('th_date') }}</th>
+                <th>{{ t('th_journal') }}</th>
+                <th>{{ t('th_description') }}</th>
+                <th>{{ t('th_montant') }}</th>
+                <th>{{ t('th_sens') }}</th>
+                <th>{{ t('th_occurrences') }}</th>
+                <th>{{ t('th_deja_signale') }}</th>
+                <th>{{ t('th_a_verifier') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in resultats.tableau_doublons %}
+            <tr>
+                <td>{{ row.Date }}</td>
+                <td>{{ row.Journal }}</td>
+                <td>{{ row.Description[:45] }}</td>
+                <td>{{ row.Montant|montant }}</td>
+                <td>{{ row.Sens }}</td>
+                <td><span class="badge-anormal">{{ row.Occurrences }}</span></td>
+                <td class="presomption">{{ row['Deja signale'] or '' }}</td>
+                <td class="presomption">{{ row['A verifier'] or '' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if resultats.tableau_deseq %}
+{# Les déséquilibres étaient détaillés sur la fiche mais pas ici : même
+   analyse, deux affichages différents, il n'y a pas de raison. #}
+<div class="results-section">
+    <h3>{{ t('sec_deseq') }}</h3>
+    <p class="note-apercu">{{ resultats.tableau_deseq|length }} {{ t('lbl_apercu_sur') }} {{ resultats.deseq|nombre }} {{ t('lbl_apercu_fin') }}</p>
+    <table>
+        <thead>
+            <tr>
+                <th>{{ t('th_date') }}</th>
+                <th>{{ t('th_journal') }}</th>
+                <th>{{ t('th_sequence') }}</th>
+                <th>{{ t('th_description') }}</th>
+                <th>{{ t('th_montant') }}</th>
+                <th>{{ t('th_sens') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in resultats.tableau_deseq %}
+            <tr>
+                <td>{{ d.Date }}</td>
+                <td>{{ d.Journal }}</td>
+                <td>{{ d.Sequence }}</td>
+                <td>{{ d.Description[:45] }}</td>
+                <td>{{ d.Montant|montant }}</td>
+                <td>{{ d.Sens }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if resultats.tableau_extournes %}
+<div class="results-section">
+    <h3>{{ t('sec_extournes') }}</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>{{ t('th_date1') }}</th>
+                <th>{{ t('th_date2') }}</th>
+                <th>{{ t('th_journal') }}</th>
+                <th>{{ t('th_desc1') }}</th>
+                <th>{{ t('th_desc2') }}</th>
+                <th>{{ t('th_montant') }}</th>
+                <th>{{ t('th_ecart') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in resultats.tableau_extournes %}
+            <tr>
+                <td>{{ row['Date 1'] }}</td>
+                <td>{{ row['Date 2'] }}</td>
+                <td>{{ row.Journal }}</td>
+                <td>{{ row['Description 1'][:40] }}...</td>
+                <td>{{ row['Description 2'][:40] }}...</td>
+                <td>{{ row.Montant|montant }}</td>
+                <td>{{ row['Ecart jours'] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if resultats.benford %}
+<div class="results-section">
+    <h3>{{ t('sec_benford') }}</h3>
+    <p style="color: {% if resultats.benford.fiable %}var(--text-muted){% else %}#d99400{% endif %}; font-size: 13px; margin-bottom: 15px;">
+        {{ resultats.benford.verdict }}
+    </p>
+    <div id="graphique-benford" style="width:100%; min-width:300px"></div>
+</div>
+{% endif %}
+
+<div class="results-section">
+    <h3>{{ t('sec_visu') }}</h3>
+    <div class="graphes-flex">
+        <div id="graphique1" class="graphe-box"></div>
+        <div id="graphique2" class="graphe-box"></div>
+    </div>
+</div>
+
+<div class="status-bar">
+    {{ t('status_termine') }} {{ resultats.total|nombre }} {{ t('status_anomalies') }} {{ resultats.nb_ecritures|nombre }} {{ t('status_ecritures') }}
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_script %}
+{# Plotly est servi par l'application elle-meme, et non par cdn.plot.ly : le
+   poste comptable de la BEAC peut etre hors ligne ou derriere un proxy, et un
+   graphique qui ne s'affiche pas rend l'ecran inutilisable. C'est aussi ce qui
+   permet d'affirmer, comme le fait le memoire, qu'aucune couche de
+   l'application ne depend d'un serveur exterieur. #}
+<script src="{{ url_for('static', filename='plotly.min.js') }}"></script>
+<script>
+function afficherFichier(input) {
+    const info = document.getElementById('fichier-info');
+    const btnAnalyse = document.querySelector('.btn-analyse');
+
+    if (input.files && input.files[0]) {
+        const fichier = input.files[0];
+        info.textContent = 'Vérification de ' + fichier.name + '...';
+        info.style.color = '#E8C547';
+        btnAnalyse.disabled = true;
+        btnAnalyse.style.opacity = '0.4';
+
+        const formData = new FormData();
+        formData.append('fichier', fichier);
+
+        fetch('/verifier', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(data => {
+                if (data.valide) {
+                    info.textContent = data.message;
+                    info.style.color = '#6bcf7f';
+                    btnAnalyse.disabled = false;
+                    btnAnalyse.style.opacity = '1';
+                } else {
+                    info.textContent = data.message;
+                    info.style.color = '#ff6b6b';
+                    input.value = '';
+                }
+            })
+            .catch(() => {
+                info.textContent = 'Erreur de vérification, réessayez.';
+                info.style.color = '#ff6b6b';
+                input.value = '';
+            });
+    }
+}
+
+function lancerAnalyse(event) {
+    const fichier = document.getElementById('fichier');
+    const info = document.getElementById('fichier-info');
+    if (!fichier.files || fichier.files.length === 0) {
+        event.preventDefault();
+        info.textContent = 'Veuillez d\'abord sélectionner un fichier Excel.';
+        info.style.color = '#ff6b6b';
+        return false;
+    }
+    document.getElementById('progress-bar').style.display = 'block';
+    let fill = document.getElementById('progress-fill');
+    let width = 0;
+    let interval = setInterval(() => {
+        if (width >= 90) clearInterval(interval);
+        else { width += 5; fill.style.width = width + '%'; }
+    }, 200);
+    return true;
+}
+
+setTimeout(() => {
+    const err = document.getElementById('erreur-serveur');
+    if (err) err.style.display = 'none';
+}, 6000);
+
+// Tri des tableaux de résultats : clic sur un en-tête = tri croissant/décroissant
+// (gère les montants avec séparateurs, les % et les dates jj/mm/aaaa)
+document.querySelectorAll('.results-section table').forEach(table => {
+    table.querySelectorAll('th').forEach((th, colIdx) => {
+        th.style.cursor = 'pointer';
+        th.title = 'Cliquer pour trier';
+        th.addEventListener('click', () => {
+            const tbody = table.querySelector('tbody');
+            const lignes = Array.from(tbody.querySelectorAll('tr'));
+            const asc = th.dataset.tri !== 'asc';
+            table.querySelectorAll('th').forEach(t => delete t.dataset.tri);
+            th.dataset.tri = asc ? 'asc' : 'desc';
+            const valeur = tr => {
+                let t = tr.children[colIdx] ? tr.children[colIdx].textContent.trim() : '';
+                const m = t.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+                if (m) return parseInt(m[3] + m[2] + m[1], 10);
+                const n = parseFloat(t.replace(/[\s ,%]/g, '').replace(/\./g, '.'));
+                return isNaN(n) ? t.toLowerCase() : n;
+            };
+            lignes.sort((a, b) => {
+                const va = valeur(a), vb = valeur(b);
+                if (typeof va === 'number' && typeof vb === 'number') return asc ? va - vb : vb - va;
+                return asc ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+            });
+            lignes.forEach(l => tbody.appendChild(l));
+        });
+    });
+});
+
+{% if resultats %}
+function tracerGraphesDashboard() {
+    const c = sidacChartColors();
+
+    // Le camembert répartit les écritures par MOTIF, et non en normal contre
+    // anormal. L'ancienne version laissait croire que tout ce qui n'était pas
+    // signalé par l'Isolation Forest était sain, alors que ces écritures
+    // contenaient des doublons, des extournes et des déséquilibres.
+    // Les analyses antérieures au 09/08/2026 n'ont pas de répartition
+    // enregistrée : on n'affiche alors pas le camembert plutôt que d'inventer
+    // des proportions à partir de compteurs qui se recoupent.
+    {% if resultats.repartition %}
+    {% set r = resultats.repartition %}
+    Plotly.newPlot('graphique1', [{
+        type: 'pie',
+        {# Trois catégories qui s'excluent : leur somme fait exactement le
+           nombre d'écritures du fichier, donc le camembert ne peut pas
+           contredire les compteurs affichés au-dessus. #}
+        {% set parts = [
+            (t('graph_apurees'),  r.apurees or 0,  '#70AD47'),
+            (t('card_remontee'),  r.remontee or 0, '#B8651B'),
+            (t('card_attente'),   r.attente or 0,  '#4E8A6B'),
+            (t('card_doublons'),  r.doublons or 0, '#C9A227')
+        ] %}
+        labels: [{% for p in parts if p[1] %}'{{ p[0] }}',{% endfor %}],
+        values: [{% for p in parts if p[1] %}{{ p[1] }},{% endfor %}],
+        marker: { colors: [{% for p in parts if p[1] %}'{{ p[2] }}',{% endfor %}] },
+        {# « 8.87% » s'ecrivait avec le point decimal anglais et trois chiffres
+           significatifs. Sur un etat de la BEAC, le separateur decimal est la
+           virgule, et une decimale suffit. #}
+        texttemplate: '%{percent:.1%}',
+        hovertemplate: '%{label} : %{value}<extra></extra>',
+        textfont: { size: 13 },
+        sort: false,
+        hole: 0.35
+    }], {
+        title: { text: '{{ t("graph_repartition") }}', font: { color: '#E8C547', size: 15 } },
+        paper_bgcolor: c.paper, plot_bgcolor: c.plot,
+        font: { color: c.font, size: 13 },
+        legend: { font: { size: 12 } },
+        {# Virgule decimale et espace pour les milliers, comme partout ailleurs
+           dans l'application. #}
+        separators: ', ',
+        {# La marge basse valait 30 pixels alors que la note est posee a
+           -0,14 en coordonnees papier : elle tombait hors du cadre et n'a
+           jamais ete visible, ni a l'ecran ni dans la figure du memoire. #}
+        margin: { t: 50, b: 78, l: 20, r: 20 },
+        annotations: [{
+            {# Sur une seule ligne, la phrase depassait la largeur du graphe et
+               ses premiers mots etaient rognes. Elle est coupee apres le
+               deux-points, present dans les trois langues. La coupure se fait
+               en JavaScript et non dans le gabarit : Jinja echappe le HTML de
+               ses variables, et un <br> pose cote serveur s'afficherait tel
+               quel. C'est ce meme echappement qui protege l'apostrophe de
+               « s'excluent » a l'interieur de la chaine JavaScript. #}
+            text: '{{ t("graph_note_motif") }}'.replace(/(\s*):\s+/, '$1:<br>'),
+            showarrow: false, xref: 'paper', yref: 'paper',
+            x: 0.5, y: -0.10, yanchor: 'top', align: 'center',
+            font: { size: 11, color: c.font }
+        }]
+    }, {responsive: true});
+    {% else %}
+    document.getElementById('graphique1').style.display = 'none';
+    {% endif %}
+
+    Plotly.newPlot('graphique2', [{
+        type: 'bar',
+        x: ['{{ t("card_doublons") }}', '{{ t("card_remontee") }}', '{{ t("card_attente") }}', '{{ t("card_anormaux") }}', '{{ t("card_deseq") }}', '{{ t("card_extournes") }}'],
+        y: [{{ resultats.doublons }}, {{ resultats.remontee }}, {{ resultats.attente or 0 }}, {{ resultats.anormaux }}, {{ resultats.deseq }}, {{ resultats.extournes }}],
+        marker: { color: ['#C9A227', '#B8651B', '#4E8A6B', '#C00000', '#1F4E79', '#5C1A5C'] },
+        text: [{{ resultats.doublons }}, {{ resultats.remontee }}, {{ resultats.attente or 0 }}, {{ resultats.anormaux }}, {{ resultats.deseq }}, {{ resultats.extournes }}],
+        textposition: 'outside', textfont: { color: c.font, size: 13 }
+    }], {
+        {# Ce graphe porte SIX barres, dont trois qui ne sont pas des suspens.
+           Le titre « Répartition des écritures en suspens » y était faux. #}
+        title: { text: '{{ t("graph_barres") }}', font: { color: '#E8C547', size: 15 } },
+        paper_bgcolor: c.paper, plot_bgcolor: c.plot,
+        font: { color: c.font, size: 13 },
+        separators: ', ',   // virgule decimale, espace pour les milliers
+        xaxis: { tickfont: { size: 11 }, tickangle: -18, automargin: true },
+        yaxis: { gridcolor: c.grid, tickfont: { size: 12 } },
+        margin: { t: 50, b: 50, l: 40, r: 20 }
+    }, {responsive: true});
+
+    {% if resultats.benford %}
+    Plotly.newPlot('graphique-benford', [
+        {
+            type: 'bar',
+            name: '{{ t("graph_observe") }}',
+            x: [1,2,3,4,5,6,7,8,9],
+            y: [{% for cc in range(1,10) %}{{ resultats.benford.observe[cc|string] }}{% if not loop.last %},{% endif %}{% endfor %}],
+            marker: { color: '#C9A227' }
+        },
+        {
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: '{{ t("graph_theorique") }}',
+            x: [1,2,3,4,5,6,7,8,9],
+            y: [30.1, 17.6, 12.5, 9.7, 7.9, 6.7, 5.8, 5.1, 4.6],
+            line: { color: '#C00000', width: 2 }
+        }
+    ], {
+        title: { text: '{{ t("graph_freq_premier") }}', font: { color: '#E8C547', size: 15 } },
+        paper_bgcolor: c.paper, plot_bgcolor: c.plot,
+        font: { color: c.font, size: 13 },
+        separators: ', ',   // virgule decimale, espace pour les milliers
+        xaxis: { title: '{{ t("graph_premier_chiffre") }}', dtick: 1, tickfont: { size: 12 } },
+        yaxis: { gridcolor: c.grid, title: '%', tickfont: { size: 12 } },
+        legend: { orientation: 'h', y: -0.3, font: { size: 13 } },
+        margin: { t: 50, b: 70, l: 50, r: 20 }
+    }, {responsive: true});
+    {% endif %}
+}
+tracerGraphesDashboard();
+window.sidacRedrawCharts = tracerGraphesDashboard;
+{% endif %}
+</script>
+{% endblock %}
