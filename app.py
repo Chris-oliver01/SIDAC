@@ -1124,10 +1124,12 @@ class SuspensConnu(db.Model):
     ne venait la refermer. Cette table permet de la refermer sans recharger
     janvier, en reconnaissant sa contrepartie dans l'export suivant.
 
-    Seule une empreinte est conservée, jamais l'écriture elle-même : le montant,
-    le sens et le libellé normalisé sont réduits à une signature. C'est assez
-    pour reconnaître une opération déjà vue, pas assez pour reconstituer le
-    compte. Le stock reproduit ce que le service tient déjà à la main, son état
+    La reconnaissance se fait par une empreinte : le montant, le sens et le
+    libellé normalisé sont réduits à une signature, et c'est elle qu'on cherche
+    dans l'export suivant. L'écriture reste toutefois lisible dans la table,
+    puisque l'agent doit retrouver de quoi il s'agit quand le suspens se
+    referme : seuls les suspens y figurent, jamais le relevé entier.
+    Le stock reproduit ce que le service tient déjà à la main, son état
     global des suspens portant les écritures non dénouées depuis 2007.
     """
     __tablename__ = 'suspens_connus'
