@@ -15,6 +15,30 @@ de l'Afrique Centrale.
 
 ---
 
+> ### ⚠️ Aucune donnée de la Banque ne figure dans ce dépôt
+>
+> Les écritures de la Banque sont couvertes par le secret professionnel. Elles
+> ne sont donc **ni dans le code, ni dans le jeu d'essai, ni sur les captures
+> d'écran** de ce dépôt.
+>
+> Tout ce que l'on voit ici a été **fabriqué de toutes pièces** : montants tirés
+> au sort, tiers inventés (« ETS DELTA », « GARAGE ZETA »…), dates aléatoires.
+> Seule la **structure** du fichier est fidèle à celle d'un export comptable —
+> c'est elle qui permet à l'application de fonctionner, et elle seule.
+>
+> Deux séries de chiffres apparaissent plus bas, et il ne faut pas les
+> confondre :
+>
+> | | Origine | Où |
+> |---|---|---|
+> | **14 324 écritures, 83,9 %** | mesures réelles, faites **dans l'agence**, citées d'après le mémoire soutenu publiquement | section « Résultats mesurés » |
+> | **1 210 écritures, 940 apurées** | **jeu d'essai fictif** livré avec le dépôt | captures d'écran et section « Essayer » |
+>
+> Les mesures réelles sont des agrégats : elles ne permettent d'identifier
+> aucune opération, aucun tiers, aucun agent.
+
+---
+
 ## Le problème
 
 Un *suspens* est une écriture qui ne trouve pas sa contrepartie. Pour le
@@ -45,8 +69,9 @@ Tant qu'on ne les sépare pas, on ne sait pas quoi corriger.
 
 ![Tableau de bord de SIDAC](captures/tableau_de_bord.png)
 
-*Le tableau de bord après analyse : les écritures sans contrepartie, réparties
-selon les trois causes, et les contrôles complémentaires.*
+*Le tableau de bord après analyse — **jeu d'essai fictif** : les écritures sans
+contrepartie, réparties selon les trois causes, et les contrôles
+complémentaires.*
 
 ## Chaque signalement s'explique
 
@@ -58,11 +83,14 @@ propose une formulation que le comptable reprend, corrige ou refuse.
 
 *« Sans contrepartie depuis 185 jours, au-delà du délai habituel du compte
 (9 jours) » — le délai de référence est mesuré sur le relevé lui-même, et non
-fixé à l'avance.*
+fixé à l'avance. Les libellés visibles (ETS Cdt Apurement IMPRIMERIE OMEGA,
+VIREMENT ATELIER KAPPA…) sont **inventés** : ce sont ceux du jeu d'essai.*
 
 ## Résultats mesurés
 
-Sur le relevé réel de janvier à juin 2026 (14 324 écritures) :
+Ces chiffres-ci sont les **vrais**. Ils ont été mesurés dans l'agence, sur le
+relevé de janvier à juin 2026 (14 324 écritures), et sont cités d'après le
+mémoire soutenu publiquement. Le relevé lui-même, lui, est resté à la Banque.
 
 | Mesure | Valeur |
 |---|---|
@@ -127,15 +155,28 @@ remontées et quelques montants franchement hors norme. L'analyse en retient
 Par défaut, la base est un fichier SQLite local. Pour une base PostgreSQL
 partagée, renseigner la variable d'environnement `SIDAC_BDD`.
 
-## Ce que ce dépôt ne contient pas
+## Ce que ce dépôt ne contient pas, et pourquoi
 
-Aucune donnée de la Banque. Ni relevé, ni écriture, ni rapport d'analyse, ni
-identifiant d'agent, ni élément d'identité visuelle de l'institution. Les
-captures d'écran et le jeu d'essai ont été produits à partir de données
-**entièrement fictives**.
+Les écritures d'une banque centrale sont couvertes par le secret professionnel.
+Elles ne sortent pas de l'agence — et elles ne sont pas ici.
 
-Les chiffres cités plus haut proviennent du mémoire soutenu publiquement et ne
-permettent d'identifier aucune opération.
+Ne figurent donc dans ce dépôt **ni relevé, ni écriture réelle, ni rapport
+d'analyse produit dans le service, ni identifiant d'agent, ni mot de passe, ni
+élément d'identité visuelle de l'institution**.
+
+Ce qui est fourni à la place :
+
+- un **jeu d'essai entièrement inventé** — 1 210 écritures tirées au sort, avec
+  des tiers imaginaires, construit pour reproduire les situations que
+  l'application doit savoir traiter ;
+- des **captures d'écran produites à partir de ce seul jeu d'essai**. Tout ce
+  qui s'y lit — montants, libellés, dates, journaux — est fictif ;
+- des **chiffres de performance** issus du mémoire soutenu publiquement. Ce sont
+  des agrégats : ils ne permettent d'identifier aucune opération, aucun tiers,
+  aucun agent.
+
+Seule la **structure** du fichier d'entrée est fidèle au format d'un export
+comptable. C'est une description technique, pas une donnée.
 
 ## Construit avec
 
