@@ -107,11 +107,21 @@ Un suspens qui traîne depuis six mois n'a pas le même sens qu'un suspens appar
 la semaine dernière. L'application s'en souvient donc d'un arrêté au suivant.
 
 Quand une écriture signalée en janvier trouve enfin sa contrepartie en mars, le
-système la reconnaît et referme le suspens tout seul, en gardant la date. Les
-écritures sont reconnues par une empreinte calculée sur le montant, le sens et
-le libellé, jamais en conservant le relevé lui-même : les écritures ne sont pas
-stockées en base, seulement le résultat de l'analyse et ce que les agents ont
-écrit.
+système la reconnaît et referme le suspens tout seul, en gardant la date. La
+reconnaissance se fait par une empreinte calculée sur le montant, le sens et le
+libellé : on cherche l'empreinte de la contrepartie attendue dans l'arrêté
+suivant, sans avoir à recharger celui de janvier.
+
+Pour être clair sur ce qui est conservé : le relevé complet n'est pas gardé en
+base, mais **les écritures en suspens le sont**. Il le faut, puisque l'agent
+doit pouvoir les relire et les annoter, et que le chef de section doit voir ce
+qu'il vise. Sont donc enregistrés les suspens de l'analyse, leur montant, leur
+sens, leur libellé et leur date, les montants signalés comme inhabituels, les
+totaux, les annotations et les visas. Les milliers d'écritures qui s'apurent
+normalement, elles, ne sont pas conservées.
+
+Tout cela reste sur le poste, dans un fichier de base de données local. Rien ne
+part sur un serveur extérieur.
 
 ![Historique](captures/historique.png)
 
@@ -120,9 +130,9 @@ stockées en base, seulement le résultat de l'analyse et ce que les agents ont
 ## Le reste de l'application
 
 **Des comptes et des rôles.** Chaque personne a son compte, avec son rôle :
-agent, chef de section, chef de service, ou administrateur. Les mots de passe
-sont chiffrés avec bcrypt, et un nouveau compte reçoit un mot de passe
-temporaire qu'il faut changer à la première connexion.
+agent, chef de section, chef de service, ou administrateur. Les mots de passe ne
+sont jamais enregistrés en clair, ils passent par bcrypt. Un nouveau compte
+reçoit un mot de passe temporaire qu'il faut changer à la première connexion.
 
 **Une piste d'audit.** Toute action sensible est tracée automatiquement :
 connexions, analyses, créations et suppressions de comptes. L'administrateur la
